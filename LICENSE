@@ -19,13 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
----
-
-Scope: this license covers the original files in this repository (build
-configuration, scripts and documentation). It does not cover:
-
-- third-party software included in or installed by an Almond Linux image,
-  which keeps its own license and copyright;
-- the "Almond Linux" name and the almond logo (branding/), which identify
-  the project and are not licensed for reuse under the terms above.

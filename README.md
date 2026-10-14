@@ -83,7 +83,7 @@ Security problems: please report them privately, as described in [SECURITY.md](S
 
 ## License
 
-Almond's own files (build configuration, scripts and documentation) are released under the [MIT License](LICENSE).
+Almond's own files (build configuration, scripts and documentation) are released under the [MIT License](LICENSE). What it does not cover is listed in [NOTICE](NOTICE).
 
 - **Upstream software keeps its own licenses.** An Almond image is assembled mainly from Debian packages; each keeps its original license and copyright. The MIT License does not relicense them.
 - **The name and logo are not covered by the MIT License.** "Almond Linux" and the almond logo identify this project. Please do not use them in a way that suggests something is an official Almond release when it is not.

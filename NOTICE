@@ -1,0 +1,9 @@
+Almond Linux — licensing notice
+
+Scope: this license covers the original files in this repository (build
+configuration, scripts and documentation). It does not cover:
+
+- third-party software included in or installed by an Almond Linux image,
+  which keeps its own license and copyright;
+- the "Almond Linux" name and the almond logo (branding/), which identify
+  the project and are not licensed for reuse under the terms above.
