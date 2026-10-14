@@ -1,0 +1,19 @@
+#!/bin/sh
+set -eu
+lb config noauto \
+  --mode debian \
+  --distribution trixie \
+  --architectures arm64 \
+  --linux-flavours arm64 \
+  --binary-images iso \
+  --bootloaders grub-efi \
+  --archive-areas main \
+  --debian-installer none \
+  --security true \
+  --updates true \
+  --apt-secure true \
+  --checksums sha256 \
+  --iso-application 'Almond Linux 0.1 development preview' \
+  --iso-volume ALMOND_01 \
+  --bootappend-live 'boot=live components hostname=almond username=almond' \
+  "${@}"

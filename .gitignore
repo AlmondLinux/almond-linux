@@ -1,0 +1,6 @@
+/build/
+*.iso
+*.qcow2
+*.img
+.DS_Store
+docs/NAME-RESEARCH.md

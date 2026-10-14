@@ -1,0 +1,17 @@
+linux-image-arm64
+live-boot
+live-config
+systemd-sysv
+task-xfce-desktop
+lightdm
+network-manager
+network-manager-gnome
+firefox-esr
+xfce4-terminal
+mousepad
+sudo
+ca-certificates
+curl
+git
+nftables
+apparmor
