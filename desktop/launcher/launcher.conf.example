@@ -1,0 +1,6 @@
+# Almond Launcher settings (example).
+# Copy to ~/.config/almond/launcher.conf and edit.
+# almond-launch reads this file as plain text; it is never run as a script.
+
+# Launcher colours: dark (default), light or ocean.
+ALMOND_LAUNCH_THEME=dark

@@ -1,19 +1,79 @@
 #!/bin/sh
+# Almond Linux live-build configuration. `lb config` runs this file.
+# Status: Implemented (source exists, untested). No ISO has been built with it.
+#
+# Settings (environment variables; sudo drops them unless you pass them on
+# the sudo command line, for example `sudo ALMOND_ARCH=arm64 ./scripts/build.sh`):
+#   ALMOND_EDITION  aaldm (default). AALLDM is not defined yet.
+#   ALMOND_ARCH     amd64 (default): the real AALDM target, hybrid BIOS+UEFI ISO.
+#                   arm64: development variant for VMs on Apple Silicon, UEFI only.
+#   ALMOND_FIRMWARE listed (default): only the firmware packages named in
+#                   config/package-lists/aaldm.list.chroot.
+#                   all: let live-build add every firmware package of the
+#                   archive (bigger ISO; for diagnosing unknown hardware).
+# Background and reasons: docs/AALDM-PLAN.md and docs/BUILD.md.
 set -eu
+
+edition=${ALMOND_EDITION:-aaldm}
+arch=${ALMOND_ARCH:-amd64}
+firmware=${ALMOND_FIRMWARE:-listed}
+
+case "$edition" in
+  aaldm) ;;
+  aalldm)
+    echo 'auto/config: AALLDM is not defined yet; only ALMOND_EDITION=aaldm can be built.' >&2
+    exit 1
+    ;;
+  *)
+    echo "auto/config: unknown ALMOND_EDITION '$edition' (expected: aaldm)." >&2
+    exit 1
+    ;;
+esac
+
+# Options are prepended, so arguments given to `lb config` (in "$@") come
+# last and can still override them.
+case "$arch" in
+  amd64)
+    # syslinux (isolinux) boots legacy BIOS PCs, GRUB boots UEFI PCs, and
+    # iso-hybrid adds the MBR/GPT data needed to boot the same file from USB.
+    set -- --architectures amd64 --linux-flavours amd64 \
+      --binary-images iso-hybrid --bootloaders 'syslinux,grub-efi' "$@"
+    ;;
+  arm64)
+    set -- --architectures arm64 --linux-flavours arm64 \
+      --binary-images iso --bootloaders grub-efi "$@"
+    ;;
+  *)
+    echo "auto/config: unknown ALMOND_ARCH '$arch' (expected: amd64 or arm64)." >&2
+    exit 1
+    ;;
+esac
+
+case "$firmware" in
+  listed) set -- --firmware-chroot false --firmware-binary false "$@" ;;
+  all) set -- --firmware-chroot true --firmware-binary false "$@" ;;
+  *)
+    echo "auto/config: unknown ALMOND_FIRMWARE '$firmware' (expected: listed or all)." >&2
+    exit 1
+    ;;
+esac
+
+# --apt-recommends false: AALDM installs only what the package list names,
+# so no Recommends (ModemManager, Debian artwork, large icon themes...) slip in.
+# 'main non-free-firmware': Debian's own images include non-free-firmware
+# since Debian 12; see docs/AALDM-PLAN.md section 1 for licence obligations.
 lb config noauto \
   --mode debian \
   --distribution trixie \
-  --architectures arm64 \
-  --linux-flavours arm64 \
-  --binary-images iso \
-  --bootloaders grub-efi \
-  --archive-areas main \
+  --archive-areas 'main non-free-firmware' \
+  --apt-recommends false \
   --debian-installer none \
   --security true \
   --updates true \
   --apt-secure true \
   --checksums sha256 \
-  --iso-application 'Almond Linux 0.1 development preview' \
+  --iso-application 'Almond Linux 0.1 Marcona (AALDM development preview)' \
+  --iso-publisher 'Almond Linux project; https://almondlinux.github.io/' \
   --iso-volume ALMOND_01 \
   --bootappend-live 'boot=live components hostname=almond username=almond' \
-  "${@}"
+  "$@"

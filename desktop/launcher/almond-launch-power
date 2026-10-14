@@ -1,0 +1,135 @@
+#!/bin/sh
+# almond-launch-power: "System" mode of the Almond Launcher (rofi script mode).
+#
+# Entries: Settings, Lock, Log Out, Sleep, Restart, Shut Down.
+# Log Out, Restart and Shut Down are destructive (unsaved work is lost), so
+# they ask for confirmation inside the launcher first. The LXQt session is
+# then asked over D-Bus to end cleanly (no second LXQt dialog); without an
+# LXQt session the script falls back to loginctl / systemctl.
+#
+# Part of Almond Linux. MIT License; see LICENSE and NOTICE.
+# Status: Implemented (source exists, untested at runtime).
+
+set -u
+
+# Run a command fully detached from rofi (rofi waits for our output to end).
+# $1 = seconds to wait first, so rofi can release the keyboard (needed by
+# screen lockers).
+detach() {
+    delay=$1
+    shift
+    (
+        [ "$delay" -gt 0 ] && sleep "$delay"
+        "$@"
+    ) >/dev/null 2>&1 &
+}
+
+has() { command -v "$1" >/dev/null 2>&1; }
+
+# True when the LXQt session manager is on the session bus.
+lxqt_session_running() {
+    has dbus-send || return 1
+    dbus-send --session --print-reply --reply-timeout=2000 \
+        --dest=org.freedesktop.DBus /org/freedesktop/DBus \
+        org.freedesktop.DBus.NameHasOwner string:org.lxqt.session 2>/dev/null |
+        grep -q 'boolean true'
+}
+
+# Ask lxqt-session to end the session ($1 = logout | reboot | powerOff).
+# These methods are fire-and-forget (no reply), so do not wait for one.
+lxqt_session_call() {
+    dbus-send --session --type=method_call --dest=org.lxqt.session \
+        /LXQtSession "org.lxqt.session.$1"
+}
+
+do_action() {
+    case $1 in
+        settings)
+            detach 0 lxqt-config
+            ;;
+        lock)
+            if has lxqt-leave; then
+                detach 1 lxqt-leave --lockscreen
+            else
+                detach 1 loginctl lock-session
+            fi
+            ;;
+        sleep)
+            detach 1 systemctl suspend
+            ;;
+        logout)
+            if lxqt_session_running; then
+                detach 0 lxqt_session_call logout
+            else
+                detach 0 loginctl terminate-session "${XDG_SESSION_ID:-}"
+            fi
+            ;;
+        reboot)
+            if lxqt_session_running; then
+                detach 0 lxqt_session_call reboot
+            else
+                detach 0 systemctl reboot
+            fi
+            ;;
+        poweroff)
+            if lxqt_session_running; then
+                detach 0 lxqt_session_call powerOff
+            else
+                detach 0 systemctl poweroff
+            fi
+            ;;
+    esac
+}
+
+# One row: text, icon name, info value (returned to us in ROFI_INFO).
+row() { printf '%s\000icon\037%s\037info\037%s\n' "$1" "$2" "$3"; }
+
+main_menu() {
+    printf '\000no-custom\037true\n'
+    row "Settings" preferences-system settings
+    row "Lock" system-lock-screen lock
+    row "Log Out" system-log-out ask-logout
+    row "Sleep" system-suspend sleep
+    row "Restart" system-reboot ask-reboot
+    row "Shut Down" system-shutdown ask-poweroff
+}
+
+confirm() { # $1 action, $2 question, $3 yes-label, $4 icon
+    printf '\000no-custom\037true\n'
+    printf '\000message\037%s Unsaved work in open apps will be lost.\n' "$2"
+    row "$3" "$4" "$1"
+    row "Cancel" window-close cancel
+}
+
+# Older rofi versions do not set ROFI_INFO; map the visible text instead.
+choice=${ROFI_INFO:-}
+if [ -z "$choice" ] && [ $# -gt 0 ]; then
+    case $1 in
+        Settings) choice=settings ;;
+        Lock) choice=lock ;;
+        "Log Out") choice=ask-logout ;;
+        Sleep) choice=sleep ;;
+        Restart) choice=ask-reboot ;;
+        "Shut Down") choice=ask-poweroff ;;
+        "Log out now") choice=logout ;;
+        "Restart now") choice=reboot ;;
+        "Shut down now") choice=poweroff ;;
+        Cancel) choice=cancel ;;
+    esac
+fi
+
+if [ "${ROFI_RETV:-0}" != 1 ] || [ -z "$choice" ]; then
+    main_menu
+    exit 0
+fi
+
+case $choice in
+    ask-logout) confirm logout "Log out now?" "Log out now" system-log-out ;;
+    ask-reboot) confirm reboot "Restart now?" "Restart now" system-reboot ;;
+    ask-poweroff) confirm poweroff "Shut down now?" "Shut down now" system-shutdown ;;
+    cancel) main_menu ;;
+    settings | lock | sleep | logout | reboot | poweroff)
+        do_action "$choice" # print nothing: rofi closes
+        ;;
+    *) main_menu ;;
+esac

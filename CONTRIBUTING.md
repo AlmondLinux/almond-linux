@@ -4,7 +4,7 @@ Thank you for your interest. Almond is at the very beginning: no ISO has been bu
 
 ## Most useful right now
 
-1. **Test the build.** Follow [docs/BUILD.md](docs/BUILD.md) inside a Debian 13 ARM64 virtual machine and report exactly what happened, including the failures. A clear failure report is as valuable as a success.
+1. **Test the build.** Follow [docs/BUILD.md](docs/BUILD.md): build and test inside a **Debian 13 amd64 virtual machine** (step by step for a Windows PC: [docs/PC-SETUP.md](docs/PC-SETUP.md)), and report exactly what happened, including the failures. A clear failure report is as valuable as a success. An arm64 VM (for example on an Apple Silicon Mac) can only build the arm64 development variant; it tests the build and the desktop, not the AALDM target hardware.
 2. **Review.** Read the build configuration and docs, and point out mistakes, unsafe defaults or unclear wording.
 3. **Ask questions.** If something in the docs confused you, it will confuse the next person too.
 
@@ -14,7 +14,7 @@ Open an issue at <https://github.com/AlmondLinux/almond-linux/issues> and includ
 
 - what you did, step by step;
 - what you expected, and what actually happened;
-- your virtual machine software and version, and the host architecture;
+- your virtual machine software and version, the host architecture, and whether you built amd64 or the arm64 development variant;
 - the relevant part of `configure.log` or `build.log` (attach long logs as files).
 
 **Security problems are different:** do not open a public issue. Follow [SECURITY.md](SECURITY.md).
@@ -24,7 +24,7 @@ Open an issue at <https://github.com/AlmondLinux/almond-linux/issues> and includ
 1. Open an issue first for anything bigger than a typo, so the idea can be discussed before you spend time on it.
 2. Keep each pull request to one change, and explain *why* in its description.
 3. Say how you tested it. "Not tested" is an acceptable answer; pretending is not.
-4. Do not add software from outside the Debian main archive, and never disable package signature checks.
+4. Package policy: packages come from Debian's `main` archive area only, plus `non-free-firmware` for firmware packages only (CPU microcode counts as firmware); these are the areas `auto/config` enables. No other areas (`contrib`, `non-free`), no third-party repositories, and never disable package signature checks.
 5. Shell scripts must stay POSIX `sh` and pass `sh -n`.
 
 ## Honesty rule

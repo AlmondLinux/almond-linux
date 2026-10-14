@@ -1,0 +1,145 @@
+! Almond-Pure-Dark -- Openbox 3.6 window frame theme ("Almond Frame")
+! Part of Almond Linux, AALDM edition. MIT License (Almond's own files);
+! the Almond name and logo are excluded, see NOTICE in the repository root.
+! Dark: dark brown title (active) / charcoal title (inactive), warm cream text.
+! Flat solid textures only: no gradients, no bevels, no text shadows.
+! Openbox themes style window frames only, never the inside of applications.
+
+! ---- geometry: compact title bar, thin border
+border.width: 1
+padding.width: 4
+padding.height: 3
+window.handle.width: 0
+window.client.padding.width: 0
+window.client.padding.height: 0
+window.label.text.justify: left
+menu.border.width: 1
+menu.overlap.x: 0
+menu.overlap.y: 0
+menu.separator.width: 1
+menu.separator.padding.width: 6
+menu.separator.padding.height: 3
+osd.border.width: 1
+
+! ---- active window
+window.active.title.bg: flat solid
+window.active.title.bg.color: #2B2118
+window.active.label.bg: parentrelative
+window.active.label.text.color: #F5DEB3
+window.active.label.text.font: shadow=n
+window.active.border.color: #D2A679
+window.active.title.separator.color: #3D3022
+window.active.client.color: #2B2118
+window.active.handle.bg: flat solid
+window.active.handle.bg.color: #2B2118
+window.active.grip.bg: flat solid
+window.active.grip.bg.color: #2B2118
+window.active.button.unpressed.bg: parentrelative
+window.active.button.unpressed.image.color: #F5DEB3
+window.active.button.hover.bg: flat solid
+window.active.button.hover.bg.color: #45372A
+window.active.button.hover.image.color: #F5DEB3
+window.active.button.pressed.bg: flat solid
+window.active.button.pressed.bg.color: #5A4734
+window.active.button.pressed.image.color: #F5DEB3
+window.active.button.disabled.bg: parentrelative
+window.active.button.disabled.image.color: #6E6255
+window.active.button.toggled.unpressed.bg: parentrelative
+window.active.button.toggled.unpressed.image.color: #F5DEB3
+window.active.button.toggled.hover.bg: flat solid
+window.active.button.toggled.hover.bg.color: #45372A
+window.active.button.toggled.hover.image.color: #F5DEB3
+window.active.button.toggled.pressed.bg: flat solid
+window.active.button.toggled.pressed.bg.color: #5A4734
+window.active.button.toggled.pressed.image.color: #F5DEB3
+! close button: Muted Red on hover, darker red when pressed
+window.active.button.close.hover.bg: flat solid
+window.active.button.close.hover.bg.color: #C55454
+window.active.button.close.hover.image.color: #F5F2EB
+window.active.button.close.pressed.bg: flat solid
+window.active.button.close.pressed.bg.color: #A84545
+window.active.button.close.pressed.image.color: #F5F2EB
+
+! ---- inactive window
+window.inactive.title.bg: flat solid
+window.inactive.title.bg.color: #202125
+window.inactive.label.bg: parentrelative
+window.inactive.label.text.color: #A39A8E
+window.inactive.label.text.font: shadow=n
+window.inactive.border.color: #3A3631
+window.inactive.title.separator.color: #2E2F34
+window.inactive.client.color: #202125
+window.inactive.handle.bg: flat solid
+window.inactive.handle.bg.color: #202125
+window.inactive.grip.bg: flat solid
+window.inactive.grip.bg.color: #202125
+window.inactive.button.unpressed.bg: parentrelative
+window.inactive.button.unpressed.image.color: #8A8278
+window.inactive.button.hover.bg: flat solid
+window.inactive.button.hover.bg.color: #2E2F34
+window.inactive.button.hover.image.color: #8A8278
+window.inactive.button.pressed.bg: flat solid
+window.inactive.button.pressed.bg.color: #3A3631
+window.inactive.button.pressed.image.color: #8A8278
+window.inactive.button.disabled.bg: parentrelative
+window.inactive.button.disabled.image.color: #4A4640
+window.inactive.button.toggled.unpressed.bg: parentrelative
+window.inactive.button.toggled.unpressed.image.color: #8A8278
+window.inactive.button.toggled.hover.bg: flat solid
+window.inactive.button.toggled.hover.bg.color: #2E2F34
+window.inactive.button.toggled.hover.image.color: #8A8278
+window.inactive.button.toggled.pressed.bg: flat solid
+window.inactive.button.toggled.pressed.bg.color: #3A3631
+window.inactive.button.toggled.pressed.image.color: #8A8278
+! close button: Muted Red on hover, darker red when pressed
+window.inactive.button.close.hover.bg: flat solid
+window.inactive.button.close.hover.bg.color: #C55454
+window.inactive.button.close.hover.image.color: #F5F2EB
+window.inactive.button.close.pressed.bg: flat solid
+window.inactive.button.close.pressed.bg.color: #A84545
+window.inactive.button.close.pressed.image.color: #F5F2EB
+
+! ---- menus (window menu, root menu)
+menu.border.color: #3A3631
+menu.title.bg: flat solid
+menu.title.bg.color: #2B2118
+menu.title.text.color: #D2A679
+menu.title.text.justify: center
+menu.title.text.font: shadow=n
+menu.items.bg: flat solid
+menu.items.bg.color: #202125
+menu.items.text.color: #F5DEB3
+menu.items.disabled.text.color: #7A7268
+menu.items.font: shadow=n
+menu.items.active.bg: flat solid
+menu.items.active.bg.color: #D2A679
+menu.items.active.text.color: #202125
+menu.items.active.disabled.text.color: #7A7268
+menu.separator.color: #3A3631
+menu.bullet.image.color: #F5DEB3
+menu.bullet.selected.image.color: #202125
+
+! ---- on-screen displays (Alt+Tab list, desktop switch popup, dialogs)
+osd.border.color: #D2A679
+osd.bg: flat solid
+osd.bg.color: #202125
+osd.label.bg: parentrelative
+osd.active.label.text.color: #F5DEB3
+osd.active.label.text.font: shadow=n
+osd.inactive.label.text.color: #A39A8E
+osd.inactive.label.text.font: shadow=n
+osd.hilight.bg: flat solid
+osd.hilight.bg.color: #D2A679
+osd.unhilight.bg: flat solid
+osd.unhilight.bg.color: #3A3631
+osd.button.unpressed.bg: flat solid
+osd.button.unpressed.bg.color: #2E2F34
+osd.button.unpressed.text.color: #F5DEB3
+osd.button.pressed.bg: flat solid
+osd.button.pressed.bg.color: #5A4734
+osd.button.pressed.text.color: #F5DEB3
+osd.button.pressed.box.color: #D2A679
+osd.button.focused.bg: flat solid
+osd.button.focused.bg.color: #45372A
+osd.button.focused.text.color: #F5DEB3
+osd.button.focused.box.color: #D2A679

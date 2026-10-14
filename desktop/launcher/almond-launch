@@ -1,0 +1,126 @@
+#!/bin/sh
+# almond-launch: the Almond Launcher (AALDM), a front end for rofi.
+#
+# Toggle: run it once to open the launcher, run it again to close it.
+# Modes (switch with Ctrl+Tab / Shift+Left/Right or the buttons on the left):
+#   Apps     installed applications (rofi drun)
+#   Windows  running windows, Enter switches to one (rofi window)
+#   Recent   recently used files from ~/.local/share/recently-used.xbel
+#   System   Settings, Lock, Log Out, Sleep, Restart, Shut Down
+#
+# Theme: dark by default. Put ALMOND_LAUNCH_THEME=light|dark|ocean in
+# ~/.config/almond/launcher.conf to change it. A personal rofi theme at
+# ~/.config/almond/launcher.rasi replaces the built-in ones completely.
+#
+# rofi runs only while the launcher is open; nothing stays resident.
+# Part of Almond Linux. MIT License; see LICENSE and NOTICE.
+# Status: Implemented (source exists, untested at runtime; no Linux/X11 session was available).
+
+set -u
+
+config_home=${XDG_CONFIG_HOME:-"$HOME/.config"}
+# The pid file lives in the per-user runtime directory. Without one, use
+# ~/.cache rather than a shared, world-writable directory such as /tmp.
+if [ -n "${XDG_RUNTIME_DIR:-}" ] && [ -d "$XDG_RUNTIME_DIR" ]; then
+    runtime_dir=$XDG_RUNTIME_DIR
+else
+    runtime_dir="$HOME/.cache"
+    mkdir -p "$runtime_dir"
+fi
+pidfile="$runtime_dir/almond-launch-$(id -u).pid"
+
+# Where the themes and helper scripts are. A source checkout keeps them next
+# to this script; an installed system uses the standard paths below.
+here=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
+if [ -f "$here/almond-launch.rasi" ] && [ -f "$here/almond-launch-power" ]; then
+    data_dir=$here
+    helper_dir=$here
+else
+    data_dir=${ALMOND_LAUNCH_DATA_DIR:-/usr/share/almond/launcher}
+    helper_dir=${ALMOND_LAUNCH_HELPER_DIR:-/usr/libexec/almond}
+fi
+
+# --- 1. Toggle: if our launcher is open, close it and stop.
+if [ -r "$pidfile" ]; then
+    pid=$(sed -n '1p' "$pidfile" 2>/dev/null)
+    case $pid in
+        '' | *[!0-9]*) ;;
+        *)
+            if kill -0 "$pid" 2>/dev/null; then
+                case $(ps -o comm= -p "$pid" 2>/dev/null) in
+                    rofi | */rofi)
+                        kill "$pid" 2>/dev/null
+                        exit 0
+                        ;;
+                esac
+            fi
+            ;;
+    esac
+fi
+
+if ! command -v rofi >/dev/null 2>&1; then
+    echo "almond-launch: rofi is not installed" >&2
+    exit 1
+fi
+
+# --- 2. Pick the theme.
+theme=dark
+conf="$config_home/almond/launcher.conf"
+if [ -r "$conf" ]; then
+    # Read the last ALMOND_LAUNCH_THEME= line; the file is parsed, never run.
+    value=$(sed -n 's/^[[:space:]]*ALMOND_LAUNCH_THEME[[:space:]]*=[[:space:]]*//p' "$conf" |
+        tail -n 1 | tr -d "\"' \t\r")
+    case $value in
+        light | dark | ocean) theme=$value ;;
+    esac
+fi
+# An environment variable of the same name wins (handy for trying themes).
+case ${ALMOND_LAUNCH_THEME:-} in
+    light | dark | ocean) theme=$ALMOND_LAUNCH_THEME ;;
+esac
+
+case $theme in
+    light) theme_file="$data_dir/almond-launch-light.rasi" ;;
+    ocean) theme_file="$data_dir/almond-launch-ocean.rasi" ;;
+    *) theme_file="$data_dir/almond-launch.rasi" ;;
+esac
+if [ -r "$config_home/almond/launcher.rasi" ]; then
+    theme_file="$config_home/almond/launcher.rasi"
+fi
+
+# --- 3. Open rofi.
+# -no-config: ignore any personal rofi setup so the launcher behaves the same
+#   for everyone; all settings come from this command line and the theme.
+# kb-cancel includes Super_L: rofi grabs the keyboard while open, so the
+#   global Super shortcut cannot reach LXQt; rofi itself closes on Super.
+# Left/Right move between grid cells (Ctrl+B / Ctrl+F still move the text
+#   cursor). One click opens an entry.
+# Mode labels are set here, not only in the theme's configuration block, so
+#   a personal launcher.rasi without that block shows the same names.
+#   drun and window are built-in modes: -display-drun / -display-window.
+#   recent and power are script modes; rofi 1.7.5 registers their
+#   display-<mode> option only after it has read the command line, so
+#   -display-recent would be ignored. -<mode>-display-name is rofi 1.7's
+#   command-line form of "configuration { <mode> { display-name: ...; } }",
+#   which rofi looks up for every mode (rofi 1.7.5 source: mode.c,
+#   xrmoptions.c). Read from the source, not seen working.
+exec rofi -no-config \
+    -show drun \
+    -modes "drun,window,recent:'$helper_dir/almond-launch-recent',power:'$helper_dir/almond-launch-power'" \
+    -display-drun Apps \
+    -display-window Windows \
+    -recent-display-name Recent \
+    -power-display-name System \
+    -theme "$theme_file" \
+    -pid "$pidfile" \
+    -show-icons -icon-theme Almond-Pure \
+    -drun-display-format '{name}' \
+    -window-format '{t}' \
+    -sort -sorting-method fzf -normalize-match \
+    -terminal x-terminal-emulator \
+    -kb-cancel 'Escape,Control+g,Control+bracketleft,Super_L' \
+    -kb-move-char-back 'Control+b' \
+    -kb-move-char-forward 'Control+f' \
+    -kb-row-left 'Left,Control+Page_Up' \
+    -kb-row-right 'Right,Control+Page_Down' \
+    -hover-select -me-select-entry '' -me-accept-entry 'MousePrimary'

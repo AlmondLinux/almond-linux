@@ -1,0 +1,195 @@
+/*
+ * Almond Pure Dark -- LXQt panel theme (lxqt-panel.qss) for Almond Linux AALDM.
+ * MIT License (Almond's own files); see LICENSE and NOTICE.
+ * Flat on purpose: solid colours only, no gradients, no transparency,
+ * no images. Hover and the active window use a #D2A679 underline.
+ * Status: Implemented (source exists, untested at runtime; written against lxqt-panel 2.1 widget names).
+ */
+
+/* ---- panel background */
+LXQtPanel #BackgroundWidget {
+    background-color: #202125;
+}
+LXQtPanel[position="Top"] #BackgroundWidget { border-bottom: 1px solid #3A3631; }
+LXQtPanel[position="Bottom"] #BackgroundWidget { border-top: 1px solid #3A3631; }
+LXQtPanel[position="Left"] #BackgroundWidget { border-right: 1px solid #3A3631; }
+LXQtPanel[position="Right"] #BackgroundWidget { border-left: 1px solid #3A3631; }
+
+QToolTip {
+    background-color: #2E2F34;
+    color: #F5DEB3;
+    border: 1px solid #3A3631;
+    padding: 2px 4px;
+}
+
+/* ---- all plugins */
+Plugin,
+LXQtPanelPlugin {
+    padding: 0;
+    spacing: 0;
+    qproperty-moveMarkerColor: #D2A679;
+}
+Plugin > QWidget,
+Plugin > QWidget > QWidget {
+    color: #F5DEB3;
+}
+Plugin > QToolButton,
+Plugin > QWidget > QToolButton,
+Plugin > QWidget > QToolButton > QWidget > QToolButton,
+LXQtPanelPlugin > QToolButton {
+    color: #F5DEB3;
+    background-color: #202125;
+    border: none;
+    border-bottom: 2px solid #202125;
+    margin: 0;
+    padding: 0 5px;
+}
+Plugin > QToolButton:hover,
+Plugin > QWidget > QToolButton:hover,
+Plugin > QWidget > QToolButton > QWidget > QToolButton:hover,
+LXQtPanelPlugin > QToolButton:hover {
+    background-color: #2E2F34;
+    border-bottom: 2px solid #D2A679;
+}
+Plugin > QToolButton:pressed,
+Plugin > QWidget > QToolButton:pressed,
+LXQtPanelPlugin > QToolButton:pressed {
+    background-color: #2B2118;
+    border-bottom: 2px solid #D2A679;
+}
+
+/* ---- Almond launcher button (quick launch) */
+#QuickLaunch QToolButton {
+    padding: 0 8px;
+}
+
+/* ---- task list */
+#TaskBar QToolButton {
+    color: #F5DEB3;
+    background-color: #202125;
+    border: none;
+    border-bottom: 2px solid #202125;
+    padding: 0 6px;
+    margin: 0 1px;
+}
+#TaskBar QToolButton:hover {
+    background-color: #2E2F34;
+    border-bottom: 2px solid #8B5A2B;
+}
+#TaskBar QToolButton:on {
+    background-color: #2B2118;
+    border-bottom: 2px solid #D2A679;
+}
+#TaskBar QToolButton[urgent="true"] {
+    border-bottom: 2px solid #C55454;
+}
+
+/* ---- clock */
+#WorldClockContent {
+    color: #F5DEB3;
+    padding: 0 8px;
+}
+#WorldClock:hover {
+    background-color: #2E2F34;
+}
+#WorldClockPopup,
+#WorldClockCalendar {
+    background-color: #202125;
+    border: 1px solid #3A3631;
+}
+#WorldClockPopup > QLabel {
+    color: #F5DEB3;
+    padding: 4px 8px;
+}
+QCalendarWidget QWidget {
+    background-color: #202125;
+    color: #F5DEB3;
+    alternate-background-color: #2B2118;
+}
+QCalendarWidget #qt_calendar_navigationbar {
+    background-color: #2B2118;
+}
+QCalendarWidget QToolButton {
+    color: #F5DEB3;
+    background-color: #2B2118;
+    border: none;
+    padding: 4px 8px;
+}
+QCalendarWidget QToolButton:hover {
+    background-color: #45372A;
+}
+QCalendarWidget QAbstractItemView:enabled {
+    color: #F5DEB3;
+    background-color: #202125;
+    selection-background-color: #D2A679;
+    selection-color: #202125;
+}
+QCalendarWidget QAbstractItemView:disabled {
+    color: #7A7268;
+}
+
+/* ---- volume */
+VolumePopup {
+    background-color: #202125;
+    border: 1px solid #3A3631;
+}
+VolumePopup > QPushButton {
+    color: #F5DEB3;
+    background-color: #2E2F34;
+    border: none;
+    border-radius: 3px;
+    padding: 3px 10px;
+    margin: 3px;
+}
+VolumePopup > QPushButton:hover {
+    background-color: #45372A;
+}
+VolumePopup > QSlider::groove:vertical {
+    background-color: #3A3631;
+    width: 6px;
+    border-radius: 3px;
+}
+VolumePopup > QSlider::handle:vertical {
+    background-color: #F5DEB3;
+    height: 12px;
+    margin: 0 -3px;
+    border-radius: 6px;
+}
+VolumePopup > QSlider::add-page:vertical {
+    background-color: #D2A679;
+    border-radius: 3px;
+}
+VolumePopup > QSlider::sub-page:vertical {
+    background-color: #3A3631;
+    border-radius: 3px;
+}
+
+/* ---- menus opened from the panel (tray icons, right-click menus) */
+QMenu {
+    background-color: #202125;
+    color: #F5DEB3;
+    border: 1px solid #3A3631;
+    padding: 4px 0;
+}
+QMenu::item {
+    padding: 4px 24px 4px 12px;
+    background-color: #202125;
+    color: #F5DEB3;
+}
+QMenu::item:selected {
+    background-color: #D2A679;
+    color: #202125;
+}
+QMenu::item:disabled,
+QMenu::item:selected:disabled {
+    background-color: #202125;
+    color: #7A7268;
+}
+QMenu::separator {
+    height: 1px;
+    background-color: #3A3631;
+    margin: 4px 8px;
+}
+QMenu::icon {
+    padding-left: 6px;
+}

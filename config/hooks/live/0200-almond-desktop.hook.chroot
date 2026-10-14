@@ -1,0 +1,316 @@
+#!/bin/sh
+# Almond Linux AALDM: desktop defaults for LXQt + Openbox on X11 with LightDM.
+# Status: Implemented (source exists, untested). No image has run this hook.
+#
+# live-build runs this inside the image chroot after all packages are
+# installed and config/includes.chroot is copied in, and after its own
+# config/hooks/normal hooks (one of which deletes icon caches). It needs no
+# network. It is idempotent: running it twice gives the same result.
+set -eu
+
+log() {
+  printf 'almond-desktop: %s\n' "$*"
+}
+
+# 1. Default X session manager and window manager (update-alternatives).
+set_alternative() {
+  # $1 = alternative name, $2 = wanted path
+  if [ -x "$2" ] && update-alternatives --list "$1" 2>/dev/null | grep -qx "$2"; then
+    update-alternatives --set "$1" "$2" >/dev/null
+    log "$1 -> $2"
+  else
+    log "warning: $2 is not registered as $1; left unchanged"
+  fi
+}
+set_alternative x-session-manager /usr/bin/startlxqt
+set_alternative x-window-manager /usr/bin/openbox
+
+# 2. Tell lxqt-session which window manager to start. Debian's
+# /usr/share/lxqt/session.conf names none, which makes LXQt ask on first
+# login. desktop/defaults normally provides /etc/xdg/lxqt/session.conf; this
+# is the fallback when it does not. It copies the whole Debian file, so every
+# other default survives whether LXQt merges the XDG files or reads only one
+# (not verified at runtime). almond-openbox (desktop/defaults) starts Openbox
+# with Almond's lxqt-rc.xml; plain openbox is the fallback.
+wm=openbox
+if [ -x /usr/bin/almond-openbox ]; then
+  wm=almond-openbox
+fi
+session_conf=/etc/xdg/lxqt/session.conf
+if [ -f "$session_conf" ] && grep -q '^window_manager=' "$session_conf"; then
+  log "keeping the window_manager already set in $session_conf"
+else
+  source_conf=$session_conf
+  if [ ! -f "$source_conf" ]; then
+    source_conf=/usr/share/lxqt/session.conf
+  fi
+  mkdir -p /etc/xdg/lxqt
+  new_conf=$session_conf.almond-new
+  if [ -f "$source_conf" ]; then
+    awk -v wm="$wm" '
+      { print }
+      /^\[General\]/ && !done { print "window_manager=" wm; done = 1 }
+      END { if (!done) { print ""; print "[General]"; print "window_manager=" wm } }
+    ' "$source_conf" > "$new_conf"
+  else
+    printf '[General]\nwindow_manager=%s\n' "$wm" > "$new_conf"
+  fi
+  chmod 0644 "$new_conf"
+  mv "$new_conf" "$session_conf"
+  log "window_manager=$wm written to $session_conf"
+fi
+
+# 2b. Fallback icon theme for LXQt. Debian's /usr/share/lxqt/lxqt.conf names
+# breeze, which AALDM does not install (no Recommends). If desktop/defaults
+# did not provide /etc/xdg/lxqt/lxqt.conf, copy Debian's file and point it at
+# Almond Pure (or Adwaita when Almond Pure is missing).
+lxqt_conf=/etc/xdg/lxqt/lxqt.conf
+if [ -f "$lxqt_conf" ]; then
+  log "keeping $lxqt_conf"
+elif [ -f /usr/share/lxqt/lxqt.conf ]; then
+  icons=Adwaita
+  if [ -f /usr/share/icons/Almond-Pure/index.theme ]; then
+    icons=Almond-Pure
+  fi
+  new_conf=$lxqt_conf.almond-new
+  awk -v icons="$icons" '
+    /^icon_theme=/ { if (!done) print "icon_theme=" icons; done = 1; next }
+    { print }
+    END { if (!done) { print ""; print "[General]"; print "icon_theme=" icons } }
+  ' /usr/share/lxqt/lxqt.conf > "$new_conf"
+  chmod 0644 "$new_conf"
+  mv "$new_conf" "$lxqt_conf"
+  log "icon_theme=$icons written to $lxqt_conf"
+else
+  log 'warning: /usr/share/lxqt/lxqt.conf is missing; LXQt icon theme not set'
+fi
+
+# 3. LightDM: start LXQt by default and use the GTK greeter.
+if [ ! -f /usr/share/xsessions/lxqt.desktop ]; then
+  log 'warning: /usr/share/xsessions/lxqt.desktop is missing'
+fi
+if [ ! -f /usr/share/xgreeters/lightdm-gtk-greeter.desktop ]; then
+  log 'warning: /usr/share/xgreeters/lightdm-gtk-greeter.desktop is missing'
+fi
+mkdir -p /etc/lightdm/lightdm.conf.d
+cat > /etc/lightdm/lightdm.conf.d/50-almond.conf <<'LIGHTDM'
+# Almond Linux AALDM (written by the 0200-almond-desktop live-build hook).
+# live-config adds the live user's autologin to /etc/lightdm/lightdm.conf.
+[Seat:*]
+user-session=lxqt
+greeter-session=lightdm-gtk-greeter
+LIGHTDM
+chmod 0644 /etc/lightdm/lightdm.conf.d/50-almond.conf
+
+# 4. Greeter look: Almond Pure dark colours, flat, no transitions.
+# The background is the first Almond wallpaper found (dark ones preferred),
+# otherwise flat Dark Brown #2B2118.
+background='#2B2118'
+for pattern in '*dark*.png' '*dark*.jpg' '*.png' '*.jpg' '*dark*.svg' '*.svg'; do
+  for candidate in /usr/share/backgrounds/almond/$pattern; do
+    if [ -f "$candidate" ]; then
+      background=$candidate
+      break 2
+    fi
+  done
+done
+gtk_theme=Adwaita
+if [ -f /usr/share/themes/Adwaita-dark/gtk-3.0/gtk.css ]; then
+  gtk_theme=Adwaita-dark
+fi
+icon_theme=Adwaita
+for candidate in Almond-Pure; do
+  if [ -f "/usr/share/icons/$candidate/index.theme" ]; then
+    icon_theme=$candidate
+    break
+  fi
+done
+font='DejaVu Sans 11'
+if [ -d /usr/share/fonts/opentype/atkinson-hyperlegible ]; then
+  font='Atkinson Hyperlegible 11'
+fi
+mkdir -p /etc/lightdm/lightdm-gtk-greeter.conf.d
+{
+  echo '# Almond Linux AALDM greeter (written by the 0200-almond-desktop hook).'
+  echo '# Files in this directory override the Debian defaults under /usr/share.'
+  echo '[greeter]'
+  echo "background=$background"
+  echo 'user-background=false'
+  echo "theme-name=$gtk_theme"
+  echo "icon-theme-name=$icon_theme"
+  echo "font-name=$font"
+  echo 'xft-antialias=true'
+  echo 'xft-hintstyle=hintslight'
+  echo 'transition-type=none'
+  echo 'transition-duration=0'
+  echo 'round-user-image=false'
+  echo 'clock-format=%H:%M'
+  echo 'indicators=~host;~spacer;~clock;~spacer;~layout;~a11y;~session;~power'
+  echo '# No screen reader is installed by default; see docs/AALDM-PLAN.md.'
+  echo 'at-spi-enabled=false'
+} > /etc/lightdm/lightdm-gtk-greeter.conf.d/50-almond.conf
+chmod 0644 /etc/lightdm/lightdm-gtk-greeter.conf.d/50-almond.conf
+log "greeter: background=$background theme=$gtk_theme icons=$icon_theme"
+
+# 5. Icon caches. live-build's 9000-remove-gnome-icon-cache hook deletes them
+# for reproducibility; without a cache every GTK and Qt program scans the
+# icon directories itself, which costs time and memory on slow PCs.
+if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+  for theme_dir in /usr/share/icons/Almond-Pure* /usr/share/icons/hicolor \
+      /usr/share/icons/Adwaita /usr/share/icons/AdwaitaLegacy; do
+    if [ -f "$theme_dir/index.theme" ]; then
+      if gtk-update-icon-cache -f -q "$theme_dir"; then
+        log "icon cache: $theme_dir"
+      else
+        log "warning: gtk-update-icon-cache failed for $theme_dir"
+      fi
+    fi
+  done
+else
+  log 'warning: gtk-update-icon-cache not installed; no icon caches'
+fi
+
+# 6. Plymouth is not installed on AALDM by default (it costs boot time and
+# memory). If someone adds it, use the Almond theme when it is present.
+if command -v plymouth-set-default-theme >/dev/null 2>&1; then
+  if [ -f /usr/share/plymouth/themes/almond/almond.plymouth ]; then
+    plymouth-set-default-theme -R almond
+    log 'plymouth theme: almond'
+  else
+    log 'warning: plymouth is installed but the almond theme is missing'
+  fi
+fi
+
+# 7. Global shortcuts: Debian's defaults plus Almond's Super key.
+# Debian 13's lxqt-globalkeys (2.1.0-2) installs its default shortcuts as
+# /etc/xdg/lxqt/globalkeyshortcuts.conf/globalkeyshortcuts.conf: its
+# debian/lxqt-globalkeys.install names etc/xdg/lxqt/globalkeyshortcuts.conf
+# as the destination DIRECTORY (forky's 2.4.0-1 installs a plain file).
+# lxqt-globalkeysd only reads a FILE called globalkeyshortcuts.conf in each
+# XDG config directory, so with the directory in place Debian's defaults
+# (Ctrl+Alt+T terminal, Print screenshot, the brightness and XF86 keys, ...)
+# are never loaded. This step writes a plain file at that path: Debian's
+# default entries, then Almond's (/usr/share/almond/lxqt/globalkeyshortcuts.conf,
+# staged by scripts/build.sh). Debian's originals are first copied to
+# /usr/share/almond/lxqt/debian-defaults/, and the directory is replaced only
+# after the merged file has been written. A second run rebuilds the same file
+# from those copies.
+# Known risk (untested): dpkg still lists the directory as part of
+# lxqt-globalkeys, so on an installed system an update of that package that
+# still ships the directory may fail to unpack over the file. The live image
+# is not upgraded in place; the installer milestone must settle this.
+keys_conf=/etc/xdg/lxqt/globalkeyshortcuts.conf
+keys_almond=/usr/share/almond/lxqt/globalkeyshortcuts.conf
+keys_saved=/usr/share/almond/lxqt/debian-defaults
+keys_marker='; Almond Linux AALDM: written by the 0200-almond-desktop live-build hook.'
+save_debian_keys() {
+  # $@ = Debian's default shortcut files; copied as a set, replacing old copies.
+  rm -rf "$keys_saved.almond-new"
+  mkdir -p "$keys_saved.almond-new"
+  for item in "$@"; do
+    if [ -f "$item" ]; then
+      cp "$item" "$keys_saved.almond-new/"
+    fi
+  done
+  rm -rf "$keys_saved"
+  mv "$keys_saved.almond-new" "$keys_saved"
+}
+if [ -d "$keys_conf" ] && [ ! -L "$keys_conf" ]; then
+  save_debian_keys "$keys_conf"/*
+  log "global shortcuts: saved Debian's defaults from the directory $keys_conf"
+elif [ -f "$keys_conf" ] && ! grep -qxF "$keys_marker" "$keys_conf"; then
+  # A plain file this hook did not write (a fixed lxqt-globalkeys package).
+  save_debian_keys "$keys_conf"
+  log "global shortcuts: saved Debian's defaults from the file $keys_conf"
+fi
+mkdir -p /etc/xdg/lxqt
+new_keys=$keys_conf.almond-new
+rm -rf "$new_keys"
+{
+  printf '%s\n' "$keys_marker"
+  printf '%s\n' "; Debian's default shortcuts first (originals: $keys_saved/),"
+  printf '%s\n' "; then Almond's ($keys_almond)."
+  printf '%s\n' '; Per-user changes (LXQt Settings > Shortcut Keys) go to'
+  printf '%s\n' '; ~/.config/lxqt/globalkeyshortcuts.conf; this file is not edited by LXQt.'
+} > "$new_keys"
+keys_debian=0
+for item in "$keys_saved"/*; do
+  if [ -f "$item" ]; then
+    {
+      printf '\n; --- Debian default shortcuts, from %s\n' "$item"
+      awk '{ sub(/\r$/, ""); print }' "$item"
+    } >> "$new_keys"
+    keys_debian=$((keys_debian + 1))
+  fi
+done
+if [ "$keys_debian" -eq 0 ]; then
+  log "warning: no Debian default shortcuts found in $keys_saved"
+fi
+keys_from="$keys_debian Debian file(s), no Almond file"
+if [ -f "$keys_almond" ]; then
+  keys_from="$keys_debian Debian file(s) + Almond's"
+  # Warn when Almond binds a key that Debian's defaults already use.
+  if [ "$keys_debian" -gt 0 ]; then
+    clashes=$(awk -v almond="$keys_almond" '
+      /^\[/ {
+        key = $0; sub(/^\[/, "", key); sub(/\].*$/, "", key); sub(/\..*$/, "", key)
+        if (key == "General") next
+        if (FILENAME == almond) { if (key in used) print key }
+        else used[key] = 1
+      }' "$keys_saved"/* "$keys_almond")
+    if [ -n "$clashes" ]; then
+      log "warning: Almond and Debian both bind: $(printf '%s' "$clashes" | tr '\n' ' ')"
+    fi
+  fi
+  {
+    printf '\n; --- Almond Linux shortcuts, from %s\n' "$keys_almond"
+    awk '{ sub(/\r$/, ""); print }' "$keys_almond"
+  } >> "$new_keys"
+else
+  log "warning: $keys_almond is missing; the Super key will not open the launcher"
+fi
+chmod 0644 "$new_keys"
+if [ -L "$keys_conf" ]; then
+  rm -f "$keys_conf"
+fi
+if [ -d "$keys_conf" ]; then
+  old_keys_dir=$keys_conf.debian-dir
+  rm -rf "$old_keys_dir"
+  mv "$keys_conf" "$old_keys_dir"
+  mv "$new_keys" "$keys_conf"
+  rm -rf "$old_keys_dir"
+  log "global shortcuts: replaced the directory $keys_conf with a merged file ($keys_from)"
+else
+  mv "$new_keys" "$keys_conf"
+  log "global shortcuts: wrote $keys_conf ($keys_from)"
+fi
+
+# 8. gvfs volume monitors. gvfs-backends stays (SMB, SFTP, FTP, WebDAV, MTP,
+# trash, recent), but GIO starts every volume monitor listed in
+# /usr/share/gvfs/remote-volume-monitors/ (files ending in .monitor) as its
+# own resident process as soon as a program such as pcmanfm-qt --desktop
+# asks for the list of drives. Three of them are not useful on AALDM:
+#   goa.monitor      GNOME Online Accounts (not installed)
+#   afc.monitor      Apple iPhone/iPad file access
+#   gphoto2.monitor  cameras in PTP mode (they are no longer listed)
+# A local dpkg-divert renames each one to <name>.monitor.almond-disabled, so
+# GIO skips it and package upgrades keep it disabled. udisks2.monitor
+# (gvfs-daemons: disks and USB sticks) and mtp.monitor (phones and media
+# players over MTP) stay. To undo one, as root:
+#   dpkg-divert --local --rename --remove /usr/share/gvfs/remote-volume-monitors/afc.monitor
+monitor_dir=/usr/share/gvfs/remote-volume-monitors
+for monitor_name in goa afc gphoto2; do
+  monitor=$monitor_dir/$monitor_name.monitor
+  disabled=$monitor.almond-disabled
+  truename=$(dpkg-divert --truename "$monitor")
+  if [ "$truename" = "$disabled" ]; then
+    log "gvfs: $monitor_name.monitor already disabled"
+  elif [ "$truename" != "$monitor" ]; then
+    log "warning: $monitor is already diverted to $truename; left unchanged"
+  elif [ -f "$monitor" ]; then
+    dpkg-divert --quiet --local --rename --divert "$disabled" --add "$monitor"
+    log "gvfs: $monitor_name.monitor disabled (diverted to $disabled)"
+  else
+    log "gvfs: $monitor not present; nothing to disable"
+  fi
+done

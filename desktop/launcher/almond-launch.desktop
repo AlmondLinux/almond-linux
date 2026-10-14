@@ -1,0 +1,16 @@
+[Desktop Entry]
+Type=Application
+Version=1.5
+Name=Almond Launch
+GenericName=Application Launcher
+Comment=Search and open apps, switch windows, find recent files, and log out or shut down
+Exec=almond-launch
+TryExec=almond-launch
+Icon=almond
+Terminal=false
+StartupNotify=false
+Categories=Utility;
+Keywords=launcher;search;apps;menu;start;run;
+# Kept out of menus and out of the launcher's own app grid: it is opened from
+# the panel button and with the Super key.
+NoDisplay=true

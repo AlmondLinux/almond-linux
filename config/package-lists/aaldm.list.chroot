@@ -1,0 +1,139 @@
+# Almond Linux AALDM (little edition) - packages in the live image.
+# Status: Implemented (source exists, untested). No build has resolved it yet.
+#
+# auto/config builds with --apt-recommends false, so every package a feature
+# needs is named here. Each name was checked in Debian 13 trixie on
+# 2026-10-14 (table: docs/AALDM-PLAN.md, appendix A).
+# The kernel comes from --linux-flavours; do not list linux-image-* here.
+# live-build reads this file through printf and treats lines that start
+# with an exclamation mark, or with a hash directly followed by if, nif or
+# endif, as commands or conditions. Keep comments plain: no percent signs,
+# no backslashes.
+
+# --- Live system (lb config also adds live-boot, live-config, systemd-sysv)
+live-boot
+live-config
+live-config-systemd
+live-tools
+systemd-sysv
+# user-setup creates the live user; it is only a Recommends of live-config.
+user-setup
+sudo
+locales
+keyboard-configuration
+
+# --- Base services
+dbus-user-session
+libpam-systemd
+polkitd
+# Old PCs often have a flat CMOS battery; a wrong clock breaks HTTPS and APT.
+systemd-timesyncd
+# zram swap (compressed RAM) for 1 GB machines; a boot-time generator, no daemon.
+systemd-zram-generator
+apparmor
+nftables
+ca-certificates
+
+# --- Firmware and CPU microcode (non-free-firmware area)
+firmware-linux-free
+# tigon/ files for Broadcom tg3 NICs and other common devices.
+firmware-misc-nonfree
+# rtl_nic/ files for the Realtek NICs found in many older PCs.
+firmware-realtek
+#if ARCHITECTURE amd64
+intel-microcode
+amd64-microcode
+#endif
+
+# --- Display server: X11. The modesetting driver is part of
+# xserver-xorg-core; xserver-xorg-video-intel is deliberately not used.
+xserver-xorg-core
+xserver-xorg-input-libinput
+libgl1-mesa-dri
+xauth
+x11-xserver-utils
+
+# --- Display manager
+lightdm
+lightdm-gtk-greeter
+# Provides the Adwaita-dark GTK 3 theme used by the greeter (no GTK 2 engine).
+gnome-themes-extra-data
+
+# --- Window manager
+openbox
+obconf-qt
+
+# --- LXQt: explicit minimal set instead of lxqt-core (no lxqt-runner:
+# the Almond Launcher uses rofi).
+lxqt-session
+lxqt-panel
+lxqt-config
+lxqt-globalkeys
+lxqt-notificationd
+lxqt-policykit
+lxqt-powermanagement
+lxqt-qtplugin
+lxqt-sudo
+lxqt-system-theme
+lxqt-menu-data
+liblxqt-backlight-helper
+# Qt 6 plugins that are only Recommends of the Qt libraries: SVG icons and
+# images (Almond Pure is SVG), extra image formats. The xcb platform plugin
+# itself ships in libqt6gui6.
+qt6-svg-plugins
+qt6-image-formats-plugins
+xdg-user-dirs
+xdg-utils
+desktop-file-utils
+
+# --- Applications
+pcmanfm-qt
+qterminal
+featherpad
+lximage-qt
+lxqt-archiver
+unzip
+zip
+screengrab
+qps
+# PDF and media viewers: far lighter than opening local files in Firefox.
+qpdfview
+mpv
+rofi
+firefox-esr
+# H.264/AAC/MP3 decoding for Firefox and mpv (cheaper than VP9/AV1 on old CPUs).
+libavcodec61
+
+# --- Files, external devices, network locations
+gvfs
+gvfs-backends
+gvfs-fuse
+udisks2
+ntfs-3g
+exfatprogs
+dosfstools
+eject
+
+# --- Network
+network-manager
+wpasupplicant
+wireless-regdb
+nm-tray
+
+# --- Audio: PulseAudio (one daemon) instead of PipeWire + WirePlumber.
+pulseaudio
+pavucontrol-qt
+alsa-utils
+
+# --- Fonts and icons
+fonts-dejavu-core
+fonts-atkinson-hyperlegible
+adwaita-icon-theme
+adwaita-icon-theme-legacy
+hicolor-icon-theme
+gtk-update-icon-cache
+librsvg2-common
+
+# --- Hardware diagnostics for test machines (lspci -nnk, lsusb)
+pciutils
+usbutils

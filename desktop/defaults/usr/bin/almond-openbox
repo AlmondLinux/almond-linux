@@ -1,0 +1,31 @@
+#!/bin/sh
+# almond-openbox: start Openbox with Almond's LXQt configuration.
+#
+# Why this exists: LXQt 2.1 (lxqt-session) starts the program named in
+# session.conf `window_manager=` without arguments, so plain `openbox` would
+# read the generic Debian /etc/xdg/openbox/rc.xml and ignore
+# /etc/xdg/openbox/lxqt-rc.xml. This wrapper gives Openbox the Almond file.
+#
+# First run: copies /etc/xdg/openbox/lxqt-rc.xml to
+# ~/.config/openbox/lxqt-rc.xml, so Openbox Settings (obconf-qt) can save
+# changes there. Delete that copy to return to the Almond defaults.
+#
+# Part of Almond Linux (AALDM). MIT License; see LICENSE and NOTICE.
+# Status: Implemented (source exists, untested at runtime; written and syntax-checked on a non-Linux host).
+
+set -u
+
+config_home=${XDG_CONFIG_HOME:-"$HOME/.config"}
+user_rc="$config_home/openbox/lxqt-rc.xml"
+system_rc=${ALMOND_OPENBOX_DEFAULTS:-/etc/xdg/openbox/lxqt-rc.xml}
+
+if [ ! -f "$user_rc" ] && [ -f "$system_rc" ]; then
+    mkdir -p "$config_home/openbox" && cp "$system_rc" "$user_rc"
+fi
+
+if [ -f "$user_rc" ]; then
+    exec openbox --config-file "$user_rc" "$@"
+fi
+
+# No Almond config available: fall back to Openbox's own lookup.
+exec openbox "$@"

@@ -1,0 +1,207 @@
+/*
+ * Almond Launcher -- Dark (default) theme for rofi 1.7 (Debian 13 ships rofi 1.7.5).
+ * Part of Almond Linux (AALDM). MIT License; see LICENSE and NOTICE.
+ * Flat and opaque: solid colours only, no transparency, no images,
+ * square window corners, inner corner radius 6px or less. Icons come from
+ * the "Almond Pure" icon theme.
+ * Generated together with almond-launch.rasi / -light / -ocean; keep the
+ * three files in step. Status: Implemented (source exists, untested at runtime).
+ */
+
+/* almond-launch passes the icon settings and the mode labels (Apps,
+ * Windows, Recent, System) on the rofi command line as well, and the
+ * command line wins, so a personal ~/.config/almond/launcher.rasi without
+ * this block still shows the same labels. These lines only matter when the
+ * theme is used without almond-launch. */
+configuration {
+    show-icons:  true;
+    icon-theme:  "Almond-Pure";
+    drun   { display-name: "Apps"; }
+    window { display-name: "Windows"; }
+    recent { display-name: "Recent"; }
+    power  { display-name: "System"; }
+}
+
+* {
+    almond-bg:        #202125;
+    almond-surface:   #2B2118;
+    almond-cell:      #26272C;
+    almond-border:    #3A3631;
+    almond-input:     #8B5A2B;
+    almond-fg:        #F5DEB3;
+    almond-muted:     #B3A796;
+    almond-accent:    #D2A679;
+    almond-on-accent: #202125;
+    almond-mode:      #8B5A2B;
+    almond-on-mode:   #F5F2EB;
+    almond-urgent:    #E8A0A0;
+    almond-active:    #D2A679;
+
+    font:             "Sans 10";
+    background-color: transparent;
+    text-color:       @almond-fg;
+    border-color:     @almond-border;
+    spacing:          0;
+    margin:           0;
+    padding:          0;
+}
+
+window {
+    location:         center;
+    anchor:           center;
+    width:            680px;
+    background-color: @almond-bg;
+    border:           1px;
+    border-color:     @almond-border;
+    /* Square corners on purpose: AALDM runs no compositor, and rofi draws
+     * on an ARGB window, so the transparent pixels outside rounded corners
+     * would show as black. Inner widgets keep small radii; they are drawn
+     * inside the opaque window. */
+    border-radius:    0;
+}
+
+mainbox {
+    orientation: vertical;
+    children:    [ header, inputbar, message, body, textbox-hints ];
+    padding:     14px;
+}
+
+/* Header: almond mark + name, as in the approved mockup. */
+header {
+    orientation: horizontal;
+    expand:      false;
+    children:    [ icon-logo, textbox-title ];
+    spacing:     10px;
+    padding:     0 0 10px 0;
+}
+icon-logo {
+    filename: "almond";
+    size:     28px;
+    expand:   false;
+}
+textbox-title {
+    content:        "Almond Launch";
+    font:           "Sans Bold 12";
+    vertical-align: 0.5;
+    expand:         true;
+}
+
+/* Search field: typing starts searching straight away. */
+inputbar {
+    orientation:      horizontal;
+    children:         [ icon-search, entry ];
+    spacing:          8px;
+    padding:          7px 10px;
+    margin:           0 0 10px 0;
+    background-color: @almond-surface;
+    border:           1px;
+    border-color:     @almond-input;
+    border-radius:    6px;
+}
+icon-search {
+    filename: "system-search";
+    size:     16px;
+    expand:   false;
+}
+entry {
+    placeholder:       "What would you like to do?";
+    placeholder-color: @almond-muted;
+    vertical-align:    0.5;
+    cursor:            text;
+}
+
+/* Messages from the Recent and System modes (empty list, confirmations). */
+message {
+    margin:           0 0 10px 0;
+    padding:          6px 10px;
+    background-color: @almond-surface;
+    border-radius:    6px;
+}
+textbox {
+    text-color: @almond-fg;
+}
+
+body {
+    orientation: horizontal;
+    children:    [ mode-switcher, listview ];
+    spacing:     12px;
+}
+
+/* Mode buttons on the left (Apps, Windows, Recent, System). */
+mode-switcher {
+    orientation: vertical;
+    expand:      false;
+    spacing:     4px;
+}
+button {
+    width:            112px;
+    padding:          8px 10px;
+    horizontal-align: 0;
+    border-radius:    6px;
+    text-color:       @almond-fg;
+    cursor:           pointer;
+}
+button selected {
+    background-color: @almond-mode;
+    text-color:       @almond-on-mode;
+}
+
+/* Icon grid. */
+listview {
+    columns:       5;
+    lines:         3;
+    flow:          horizontal;
+    fixed-height:  true;
+    fixed-columns: true;
+    dynamic:       false;
+    cycle:         false;
+    scrollbar:     false;
+    spacing:       6px;
+}
+element {
+    orientation:   vertical;
+    spacing:       6px;
+    padding:       10px 4px 8px 4px;
+    border-radius: 6px;
+    cursor:        pointer;
+}
+element normal.normal, element alternate.normal {
+    background-color: @almond-cell;
+    text-color:       @almond-fg;
+}
+element normal.active, element alternate.active {
+    background-color: @almond-cell;
+    text-color:       @almond-active;
+}
+element normal.urgent, element alternate.urgent {
+    background-color: @almond-cell;
+    text-color:       @almond-urgent;
+}
+element selected.normal, element selected.active, element selected.urgent {
+    background-color: @almond-accent;
+    text-color:       @almond-on-accent;
+}
+element-icon {
+    size:             36px;
+    horizontal-align: 0.5;
+    background-color: inherit;
+    text-color:       inherit;
+    cursor:           inherit;
+}
+element-text {
+    horizontal-align: 0.5;
+    vertical-align:   0.5;
+    background-color: inherit;
+    text-color:       inherit;
+    highlight:        bold;
+    cursor:           inherit;
+}
+
+/* Footer: the keys that work. */
+textbox-hints {
+    content:    "Type to search   ·   Arrows move   ·   Enter opens   ·   Ctrl+Tab next mode   ·   Esc or Super closes";
+    font:       "Sans 8";
+    text-color: @almond-muted;
+    expand:     false;
+    margin:     10px 0 0 0;
+}

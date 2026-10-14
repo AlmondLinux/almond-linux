@@ -1,0 +1,15 @@
+/* Almond Pure Light -- desktop notifications (lxqt-notificationd). Flat, opaque. */
+Notification {
+    background-color: #F5F2EB;
+    border: 1px solid #8B5A2B;
+    margin: 0;
+}
+Notification QLabel {
+    color: #2B2118;
+}
+#appLabel {
+    color: #6B6258;
+}
+#summaryLabel {
+    font-weight: bold;
+}

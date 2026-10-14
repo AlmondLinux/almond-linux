@@ -1,0 +1,85 @@
+# Almond Linux boot splash (AALDM). Static: logo on a flat Dark Brown screen.
+# Module choice: two-step with every animation switched off. Checked against
+# the plymouth 24.004.60 source that Debian 13 'trixie' ships: with no
+# throbber-/animation-/progress- frames and UseAnimation=false, two-step only
+# redraws when something changes (a message or the password prompt). The
+# 'script' module was rejected because its plugin re-arms a 50 Hz refresh
+# timer for the whole boot even when the script draws nothing new.
+# two-step needs lock.png, entry.png and bullet.png to load at all (they are
+# the encrypted-disk password prompt); watermark.png is the logo.
+# two-step.so ships in the Debian package 'plymouth-themes'.
+# Install to /usr/share/plymouth/themes/almond/ (ImageDir below).
+# Runtime behaviour is UNTESTED: nothing has been booted yet.
+
+[Plymouth Theme]
+Name=Almond
+Description=Almond Linux static boot splash: logo on Dark Brown, no animation
+ModuleName=two-step
+
+[two-step]
+ImageDir=/usr/share/plymouth/themes/almond
+# Logo: centred, drawn once.
+WatermarkHorizontalAlignment=.5
+WatermarkVerticalAlignment=.5
+# Password prompt and update titles sit below the logo. Boot messages are
+# centred on the top line (y=10): with no animation there is nothing for
+# MessageBelowAnimation to sit under.
+DialogHorizontalAlignment=.5
+DialogVerticalAlignment=.75
+TitleHorizontalAlignment=.5
+TitleVerticalAlignment=.75
+HorizontalAlignment=.5
+VerticalAlignment=.75
+MessageBelowAnimation=true
+# Flat colour: equal start and end colours make two-step fill, not gradient.
+BackgroundStartColor=0x2b2118
+BackgroundEndColor=0x2b2118
+Transition=none
+TransitionDuration=0.0
+
+[boot-up]
+UseAnimation=false
+UseEndAnimation=false
+UseProgressBar=false
+
+[shutdown]
+UseAnimation=false
+UseEndAnimation=false
+UseProgressBar=false
+
+[reboot]
+UseAnimation=false
+UseEndAnimation=false
+UseProgressBar=false
+
+[updates]
+UseAnimation=false
+UseEndAnimation=false
+UseProgressBar=false
+SuppressMessages=true
+Title=Installing updates...
+SubTitle=Do not turn off your computer
+
+[system-upgrade]
+UseAnimation=false
+UseEndAnimation=false
+UseProgressBar=false
+SuppressMessages=true
+Title=Upgrading the system...
+SubTitle=Do not turn off your computer
+
+[firmware-upgrade]
+UseAnimation=false
+UseEndAnimation=false
+UseProgressBar=false
+SuppressMessages=true
+Title=Upgrading firmware...
+SubTitle=Do not turn off your computer
+
+[system-reset]
+UseAnimation=false
+UseEndAnimation=false
+UseProgressBar=false
+SuppressMessages=true
+Title=Resetting the system...
+SubTitle=Do not turn off your computer

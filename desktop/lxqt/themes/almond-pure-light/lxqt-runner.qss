@@ -1,0 +1,9 @@
+/* Almond Pure Light -- LXQt runner (Alt+F2 dialog, if installed). Flat, opaque. */
+#panel {
+    background-color: #F5F2EB;
+    border: 1px solid #D9CFBF;
+}
+#commandList {
+    border: none;
+    margin: 0 1px 1px 1px;
+}

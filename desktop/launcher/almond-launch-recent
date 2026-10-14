@@ -1,0 +1,132 @@
+#!/bin/sh
+# almond-launch-recent: "Recent" mode of the Almond Launcher (rofi script mode).
+#
+# Lists the 15 most recently used local files that still exist, newest first,
+# read from ~/.local/share/recently-used.xbel (the freedesktop.org recent-files
+# list written by GTK and other toolkits). Selecting one opens it with
+# xdg-open. If the file list is missing or empty, no entries are shown.
+#
+# Light parser on purpose (sed/awk, no XML library): it expects the usual
+# GLib layout with one <bookmark ...> start tag per line.
+# Part of Almond Linux. MIT License; see LICENSE and NOTICE.
+# Status: Implemented (source exists, untested at runtime).
+
+set -u
+
+xbel="${XDG_DATA_HOME:-"$HOME/.local/share"}/recently-used.xbel"
+limit=15
+
+# Selected entry: rofi passes its info field (the file URI) in ROFI_INFO.
+if [ "${ROFI_RETV:-0}" = 1 ] && [ -n "${ROFI_INFO:-}" ]; then
+    # Detach so rofi can close; send all output away from rofi's pipe.
+    (xdg-open "$ROFI_INFO" >/dev/null 2>&1 &)
+    exit 0
+fi
+if [ "${ROFI_RETV:-0}" != 0 ]; then
+    exit 0 # typed text without a match, or anything else: just close
+fi
+
+printf '\000no-custom\037true\n'
+
+if [ ! -r "$xbel" ]; then
+    printf '\000message\037No recent files yet\n'
+    exit 0
+fi
+
+tab=$(printf '\t')
+
+# Sets $icon: a generic freedesktop.org mime-type icon for $1 (type), or
+# "folder" when $2 is a directory.
+pick_icon() {
+    case $1 in
+        inode/directory) icon=folder ;;
+        application/pdf) icon=application-pdf ;;
+        text/*) icon=text-x-generic ;;
+        image/*) icon=image-x-generic ;;
+        audio/*) icon=audio-x-generic ;;
+        video/*) icon=video-x-generic ;;
+        *spreadsheet* | *ms-excel*) icon=x-office-spreadsheet ;;
+        *presentation* | *ms-powerpoint*) icon=x-office-presentation ;;
+        *opendocument.text* | *msword* | *wordprocessing*) icon=x-office-document ;;
+        *zip* | *tar* | *compressed* | *7z* | *rar*) icon=package-x-generic ;;
+        *) icon=text-x-generic ;;
+    esac
+    if [ -d "$2" ]; then icon=folder; fi
+}
+
+# awk output: modified-time <TAB> uri <TAB> mime type <TAB> decoded path
+# (empty fields are replaced, because read(1) merges adjacent tabs).
+# LC_ALL=C makes awk treat every byte as one character (UTF-8 safe decoding).
+entries=$(LC_ALL=C awk '
+BEGIN {
+    for (i = 0; i < 256; i++) hexval[sprintf("%02x", i)] = i
+    for (i = 1; i < 256; i++) byte[i] = sprintf("%c", i)
+    unitsep = sprintf("%c", 31) # rofi field separator; must not occur in a row
+}
+function attr(line, name,    m) {
+    if (match(line, " " name "=\"[^\"]*\"")) {
+        m = substr(line, RSTART + length(name) + 3, RLENGTH - length(name) - 4)
+        return m
+    }
+    return ""
+}
+function unxml(s) {
+    gsub(/&lt;/, "<", s); gsub(/&gt;/, ">", s); gsub(/&quot;/, "\"", s)
+    gsub(/&apos;/, "\047", s); gsub(/&amp;/, "\\&", s)
+    return s
+}
+function unpercent(s,    out, i, c, h) {
+    out = ""
+    for (i = 1; i <= length(s); i++) {
+        c = substr(s, i, 1)
+        h = tolower(substr(s, i + 1, 2))
+        if (c == "%" && (h in hexval) && hexval[h] > 0) {
+            out = out byte[hexval[h]]; i += 2
+        } else {
+            out = out c
+        }
+    }
+    return out
+}
+/<bookmark[ \t]/ {
+    inside = 1; mime = ""
+    href = unxml(attr($0, "href"))
+    when = attr($0, "modified")
+    if (when == "") when = attr($0, "visited")
+    if (when == "") when = attr($0, "added")
+}
+inside && /mime-type/ { m = attr($0, "type"); if (m != "") mime = m }
+inside && /<\/bookmark>/ {
+    inside = 0
+    if (href ~ /^file:\/\//) {
+        path = href; sub(/^file:\/\/[^\/]*/, "", path)
+        path = unpercent(path)
+        if (when == "") when = "0"
+        if (mime == "") mime = "unknown"
+        # Skip names with tabs, newlines or the rofi field separator (0x1f):
+        # a file name containing 0x1f could otherwise add its own row
+        # options, such as a different "info" value (the URI that is opened).
+        if (path !~ /[\t\n]/ && index(path, unitsep) == 0 && index(href, unitsep) == 0)
+            print when "\t" href "\t" mime "\t" path
+    }
+}
+' "$xbel" 2>/dev/null | sort -r | awk -F '\t' '!seen[$2]++' |
+    while IFS="$tab" read -r when uri mime path; do
+        [ -e "$path" ] || continue
+        pick_icon "$mime" "$path"
+        name=${path##*/}
+        [ -n "$name" ] || name=$path
+        printf '%s\t%s\t%s\t%s\n' "$name" "$icon" "$path" "$uri"
+    done | head -n "$limit")
+
+if [ -z "$entries" ]; then
+    printf '\000message\037No recent files yet\n'
+    exit 0
+fi
+
+# rofi row format: text \0 icon \x1f name \x1f meta \x1f search-only text
+# \x1f info \x1f value given back in ROFI_INFO (the URI to open).
+printf '%s\n' "$entries" | while IFS="$tab" read -r name icon path uri; do
+    printf '%s\000icon\037%s\037meta\037%s\037info\037%s\n' \
+        "$name" "$icon" "$path" "$uri"
+done

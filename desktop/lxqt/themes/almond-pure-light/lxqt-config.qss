@@ -1,0 +1,8 @@
+/* Almond Pure Light -- LXQt Configuration Center: widgets follow the Qt palette;
+   only tooltips are set here. */
+QToolTip {
+    background-color: #2B2118;
+    color: #F5DEB3;
+    border: 1px solid #D9CFBF;
+    padding: 2px 4px;
+}

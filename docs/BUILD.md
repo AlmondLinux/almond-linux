@@ -1,61 +1,145 @@
-# First ARM64 build and VM test
+# Building and testing AALDM
 
 ## Objective
 
-Produce an experimental Almond 0.1 live ISO, then prove it boots in an ARM64 UEFI VM. These instructions and scripts have NOT produced an ISO yet.
+Produce the experimental **Almond Linux 0.1 "Marcona" AALDM** live ISO for 64-bit PCs (amd64), then prove it boots in a VM in both legacy-BIOS and UEFI mode, and later on the first real test PC, a Dell OptiPlex 390.
 
-## Host and tools
+**These instructions and scripts have NOT produced an ISO yet.** Everything below is the intended procedure; "expected" means not observed.
 
-Development happens on an Apple Silicon Mac, but the build itself must run inside a Linux virtual machine. No working Linux build VM has been set up yet.
+## What gets built
 
-Create a dedicated Debian 13 ARM64 virtual machine (for example with UTM/QEMU or Parallels Desktop) using an official Debian installer. Verify installer checksums/signatures using Debian's published instructions. Use 4 virtual CPUs, 8 GB RAM and an 80 GB virtual disk as starting allocations. These are recommendations, not measured minimum requirements. Keep builds on the VM's Linux filesystem, not a macOS shared folder.
+| Setting | Default | Other values |
+|---|---|---|
+| `ALMOND_EDITION` | `aaldm` (A All Little Distribution Model) | none yet; AALLDM is not defined |
+| `ALMOND_ARCH` | `amd64`: hybrid ISO, boots legacy BIOS (isolinux) and UEFI (GRUB), from DVD or USB | `arm64`: development variant for VMs on Apple Silicon Macs, UEFI only |
+| `ALMOND_FIRMWARE` | `listed`: only the firmware packages in the package list | `all`: every firmware package of the archive (bigger; for diagnosing hardware) |
 
-The build uses root inside this dedicated VM because live-build creates mounts and chroots. It must not run directly on macOS. Do not attach physical disks.
+Desktop: LXQt 2.1 + Openbox on X11, LightDM, Firefox ESR, from Debian 13 "trixie" `main` and `non-free-firmware`. Reasons and package details: [AALDM-PLAN.md](AALDM-PLAN.md).
 
-## Commands inside the Debian build VM
+## Build host
 
-First install the existing Debian tools: live-build orchestrates the image; debootstrap creates the Debian root filesystem; xorriso and squashfs-tools package it; GRUB tools provide ARM64 EFI boot files.
+- **amd64 ISO: a native amd64 Debian 13 machine.** In practice a Debian 13 amd64 VM on an ordinary x86-64 PC (Windows, Linux or an Intel Mac). Step-by-step for a Windows PC with VirtualBox: [PC-SETUP.md](PC-SETUP.md).
+- **Apple Silicon Macs can only build the arm64 development variant natively**, inside a Debian 13 arm64 VM (UTM/QEMU or Parallels). That variant tests the build and the desktop, not the target hardware.
+- **Cross-building** (amd64 ISO on an arm64 host, through qemu-user emulation) is future work. `scripts/build.sh` refuses when the host architecture differs from `ALMOND_ARCH`.
+- Starting allocation for the build VM: 4 virtual CPUs, 8 GB RAM, 80 GB virtual disk (recommendations, not measured minimums). Keep the build on the VM's own Linux filesystem, not a shared folder. Do not attach physical disks.
+- Verify the Debian installer image's checksum before installing the build VM (Debian publishes `SHA256SUMS` and signatures next to each image).
+
+The build runs as root inside that dedicated machine, because live-build creates mounts and chroots. `scripts/build.sh` refuses to run on macOS or any non-Linux system, on anything that is not Debian 13, without root, without live-build, or with the wrong architecture.
+
+## Commands inside the Debian build machine
 
 ```sh
 sudo apt update
-sudo apt install live-build debootstrap xorriso squashfs-tools grub-efi-arm64-bin mtools dosfstools ca-certificates git
+sudo apt install live-build debootstrap ca-certificates git
 ```
 
-Copy this project into the VM's home directory. From that project directory, the following starts a fresh isolated build attempt and retains logs. It does not erase previous attempts.
+live-build installs the bootloader and image tools it needs (syslinux, isolinux, GRUB EFI, xorriso, squashfs-tools, rsvg-convert) *inside its own build chroot*, so they are not strictly needed on the host. Installing them on the host as well, as [PC-SETUP.md](PC-SETUP.md) does, is harmless.
+
+From the project directory:
 
 ```sh
-sudo ./scripts/build.sh
+sudo ./scripts/build.sh                        # AALDM, amd64 (default)
+sudo ALMOND_ARCH=arm64 ./scripts/build.sh      # arm64 dev variant (arm64 host)
+sudo ALMOND_FIRMWARE=all ./scripts/build.sh    # all firmware packages
 ```
 
-Expected, not observed: an ISO and SHA256SUMS under `build/attempt.XXXXXX/`. The script records build tool versions there. Preserve live-build's package list alongside the ISO. Check its hash from that output directory:
+`sudo` drops environment variables set earlier, so put them **on the sudo line** as shown.
+
+Each run creates a new `build/attempt.XXXXXX/` and never deletes earlier attempts. Before building, the script copies `auto/` and `config/` there and stages the Almond assets into the attempt's `config/includes.chroot/` (missing assets are reported as warnings; the build continues):
+
+| Source in the repository | Path in the image |
+|---|---|
+| `desktop/icons/*/` | `/usr/share/icons/` |
+| `desktop/openbox/*/` | `/usr/share/themes/` |
+| `desktop/launcher/almond-launch` | `/usr/bin/almond-launch` (0755) |
+| `desktop/launcher/*.rasi`, `*.example` | `/usr/share/almond/launcher/` |
+| `desktop/launcher/almond-launch-*` (helpers, not `.rasi`) | `/usr/libexec/almond/` (0755) |
+| `desktop/launcher/almond-launch.desktop` | `/usr/share/applications/` |
+| `desktop/lxqt/globalkeyshortcuts.conf` (Super key) | `/usr/share/almond/lxqt/globalkeyshortcuts.conf` (a copy in `desktop/defaults/etc/xdg/lxqt/` wins and is moved there too). Not staged to `/etc/xdg/lxqt/`: Debian 13's `lxqt-globalkeys` installs that path as a directory. The 0200 hook merges it with Debian's default shortcuts into a plain file at `/etc/xdg/lxqt/globalkeyshortcuts.conf` |
+| `desktop/wallpapers/*` | `/usr/share/backgrounds/almond/` |
+| `desktop/defaults/etc/`, `desktop/defaults/usr/` | `/etc/`, `/usr/` |
+| `desktop/lxqt/themes/*/`, `desktop/lxqt/palettes/*` | `/usr/share/lxqt/themes/`, `/usr/share/lxqt/palettes/` |
+| `desktop/gtk/settings.ini` | `/etc/gtk-3.0/settings.ini` |
+| `branding/boot/plymouth/almond/` | `/usr/share/plymouth/themes/almond/` (staged for later; plymouth is not installed) |
+| `branding/logo/png/*.png` | `/usr/share/pixmaps/almond-*.png` |
+| `tests/measure-memory.sh` | `/usr/share/almond/tests/measure-memory.sh` |
+| `branding/boot/isolinux-splash.png` (amd64) | BIOS boot menu background (`config/bootloaders/isolinux/splash.png`) |
+| `branding/boot/grub-background.png` | GRUB (UEFI) menu background (`config/bootloaders/grub-pc/splash.png`) |
+
+Staged files are made root-owned, 0644 (0755 if they were executable); `.DS_Store` and `*.md` files are dropped. The hooks in `config/hooks/live/` then set the Almond identity (`0100`) and the desktop defaults (`0200`: LXQt session with Openbox, LightDM and greeter settings, icon caches, the merged global-shortcuts file, and `dpkg-divert`s that disable the GOA, AFC and gphoto2 gvfs volume monitors).
+
+Expected output, not observed, in `build/attempt.XXXXXX/`:
+
+| File | Content |
+|---|---|
+| `live-image-amd64.hybrid.iso` (`live-image-arm64.iso` for arm64) | the image |
+| `SHA256SUMS` | SHA-256 of the ISO and of `package-manifest.txt` |
+| `package-manifest.txt` | copy of live-build's `live-image-<arch>.packages` (every installed package and version) |
+| `build-settings.txt` | edition, architecture, firmware mode, host, git commit and whether the tree had uncommitted changes |
+| `build-tool-versions.txt` | live-build and debootstrap versions |
+| `configure.log`, `build.log` | full logs |
+
+Check the hash from that directory:
 
 ```sh
 sha256sum -c SHA256SUMS
 ```
 
-A checksum detects changes; it does not authenticate a publisher without a separately trusted signature. Release signing is still planned.
+A checksum detects changes; it does not prove who made the file. Release signing is still planned.
 
-## Acceptance test
+## Acceptance test (amd64 VM)
 
-Create a second ARM64 UEFI VM with 4 GB RAM, NAT networking, no physical disk access and initially no writable disk. Attach the built ISO.
+Create a test VM (VirtualBox, QEMU/KVM or similar) with **2 GB RAM** first, then repeat with **1 GB RAM**; 2 CPUs; NAT networking; **no virtual hard disk**. Attach the ISO. Run the whole test twice: once with **legacy BIOS** firmware, once with **UEFI**.
 
-1. Reach the graphical desktop through the EFI boot menu.
-2. Open a terminal: `uname -m` should report `aarch64`.
-3. `cat /etc/os-release` should identify Almond 0.1 "Marcona" with Debian lineage (`ID_LIKE=debian`).
-4. Check browser HTTPS access and DNS; `nmcli device status` should show connectivity.
-5. `sudo apt update` must succeed without unauthenticated repository warnings. Inspect configured suites for trixie, trixie-updates and trixie-security.
-6. Exercise terminal, editor, keyboard layout, resolution, clipboard where supported, and basic accessibility.
-7. Inspect `ss -lntup`, `sudo nft list ruleset`, and AppArmor status; record actual results. Firewall hardening is not implemented by merely installing nftables.
-8. Shut down and boot a second time. Record VM version, firmware settings, ISO hash and results. Changes are expected to disappear without persistence.
+1. The boot menu appears (Almond background expected; BIOS: isolinux, UEFI: GRUB) and the default entry reaches the desktop without a login prompt.
+2. Open a terminal (QTerminal): `uname -m` reports **`x86_64`**.
+3. `cat /etc/os-release` identifies Almond Linux 0.1 "Marcona" AALDM with `ID_LIKE=debian` and `VARIANT_ID=aaldm`.
+4. The session is **LXQt with Openbox**: `echo $XDG_CURRENT_DESKTOP` prints `LXQt`; `pgrep -a openbox` shows Openbox running with `--config-file` (through `almond-openbox`); no window-manager chooser appeared at first login.
+5. **Super opens the Almond Launcher** (rofi); typing filters, Enter starts the program, Esc closes it; afterwards `pgrep rofi` prints nothing. Debian's default shortcuts still work: Ctrl+Alt+T opens QTerminal, Print starts `screengrab`. `/etc/xdg/lxqt/globalkeyshortcuts.conf` is a file, not a directory.
+6. Network: `nmcli device status` shows the connection; Firefox ESR loads an HTTPS page.
+7. `sudo apt update` succeeds without unauthenticated-repository warnings; sources include trixie, trixie-updates and trixie-security with `main non-free-firmware`.
+8. Exercise the file manager (USB stick if the VM can pass one through), text editor, image viewer, keyboard layout, screen resolution, sound (`pavucontrol-qt`), and keyboard-only use. `pgrep -a -f volume-monitor` lists only the udisks2 and MTP monitors.
+9. **Memory**: leave the machine untouched, then run
+   ```sh
+   sudo sh /usr/share/almond/tests/measure-memory.sh -w 120 > memory.txt
+   ```
+   Repeat over 5 fresh boots and report the median, as described in [PERFORMANCE.md](PERFORMANCE.md).
+10. Inspect `ss -lntup`, `sudo nft list ruleset` and `sudo aa-status`; record the actual results. Installing nftables does not configure a firewall.
+11. Shut down, boot again, and record: VM software and version, firmware mode, RAM, ISO hash, and the result of every step (including failures). Changes are expected to disappear without persistence.
+
+For the **arm64 dev variant**, use an arm64 UEFI VM and expect `uname -m` = `aarch64`; everything else is the same except the BIOS run.
+
+## OptiPlex 390 test plan (second-hand PC)
+
+The first real test PC is a Dell OptiPlex 390 (2011, 64-bit Intel, Intel HD Graphics): a second-hand PC whose internal disk may still hold someone else's data. Read [AALDM-PLAN.md section 15](AALDM-PLAN.md#15-dell-optiplex-390-notes) first. The same rules apply to any second-hand test PC.
+
+**Before starting**
+
+- Boot **only from USB**. Never open, mount, browse or read the internal disk. If the PC's owner agrees, unplug the internal disk's SATA data cable for these tests.
+- **Do not install anything to its internal disk.** Wiping (sanitising) that disk needs the owner's explicit permission and is a separate, explicit decision.
+
+**Boot from USB**
+
+1. Write the amd64 ISO to a USB stick on another computer (Rufus in DD mode, balenaEtcher, or `dd` on Linux). This erases the stick only.
+2. Power on the OptiPlex and press **F12** for the one-time boot menu.
+3. **BIOS vs UEFI**: if the menu offers the USB stick under both "Legacy" and "UEFI", test each, one boot at a time. Record which modes exist and which boot. (Reports disagree about whether this model supports UEFI at all, which is why the ISO is hybrid.)
+4. Run the acceptance steps 2–11 above. On this machine also record:
+   - `lscpu`, `free -m`, `lspci -nnk` (exact CPU, RAM, GPU and **network card** with its driver);
+   - whether X uses the modesetting driver with glamor (`journalctl -b | grep -i -E 'modeset|glamor'`);
+   - missing firmware messages (`journalctl -k | grep -i firmware`); if the network card does not work, try a build with `ALMOND_FIRMWARE=all` and compare;
+   - five memory reports (step 9), plus one with Firefox open on one page.
+5. **Check that no internal disk is mounted**, right after the desktop appears and again at the end: run `findmnt` and `lsblk -f` and confirm that no partition of the internal disk has a mount point (only the USB stick, the live system's own mounts, tmpfs/overlay and zram may appear). These commands only list devices, mount points and filesystem labels; they open no file on the disk. Do not run anything else against the internal disk. If an internal partition is mounted, stop, unmount it without opening any file (`sudo umount <mount point>`), and report it as a bug.
+6. In the live session, never open, mount or browse the internal drive, even if it is listed under Devices in the file manager. Do not run any installer.
 
 ## Troubleshooting
 
-- macOS refusal: expected guard; use the Debian guest.
-- Wrong architecture: use Debian arm64, not amd64, and an ARM64 EFI VM.
-- Missing package or repository errors: inspect build.log and sources; never disable signature verification to force a build.
-- Unsupported live-build options: preserve configure.log and installed live-build version; reconcile the packaged tool with its manual before changing options.
-- No bootable device: verify EFI firmware, ARM64 image and ISO attachment; inspect the ISO's EFI boot image.
-- Black screen: inspect guest display configuration and logs; a virtual display issue does not prove native Mac compatibility.
-- Disk space: allocate more VM storage; failed attempts remain deliberately. Inspect before manually removing any attempt.
+- **Refusal on macOS or another OS**: expected guard. Build inside a Debian 13 machine.
+- **"this host is arm64 but ALMOND_ARCH is amd64"** (or the reverse): build on a host of the target architecture; cross-building is not supported yet.
+- **Missing package or repository errors**: inspect `build.log`; never disable signature verification to force a build. The package names were checked against trixie on 2026-10-14 (AALDM-PLAN appendix A); a later Debian point release can rename or remove packages.
+- **Unsupported live-build options**: keep `configure.log` and the installed live-build version (`build-tool-versions.txt`); compare with the live-build manual for that version before changing options.
+- **A feature is missing after boot** (no icons, a program does not start): the image is built without Recommends, so a needed package may not be in the list. Look up the program's Recommends on packages.debian.org, check `package-manifest.txt`, and report it.
+- **No bootable device**: check the firmware mode (BIOS/UEFI) of the VM or PC and that the ISO (or USB stick) is attached first in the boot order.
+- **Black screen or no desktop**: check the VM's graphics controller; on real hardware try the boot menu's failsafe entry; collect `journalctl -b` from a text console (Ctrl+Alt+F2).
+- **Disk space**: give the build VM more storage; failed attempts are kept on purpose. Inspect before removing any attempt.
 
-Next milestone: one successful build and one recorded boot test, before visual customization.
+Next milestone: one successful build and one recorded boot test in each firmware mode, before any visual work is called done.

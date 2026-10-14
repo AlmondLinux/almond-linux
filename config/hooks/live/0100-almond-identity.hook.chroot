@@ -1,17 +1,21 @@
 #!/bin/sh
 set -eu
+# Almond identity for the AALDM image (amd64 target and the arm64 dev variant).
+# Status: Implemented (source exists, untested).
 # Replace only the image's /etc override; preserve Debian's vendor file.
 rm -f /etc/os-release
 cat > /etc/os-release <<'IDENTITY'
 NAME="Almond Linux"
-PRETTY_NAME="Almond Linux 0.1 Marcona (development preview)"
+PRETTY_NAME="Almond Linux 0.1 Marcona (AALDM development preview)"
 ID=almond
 ID_LIKE=debian
 VERSION_ID="0.1"
-VERSION="0.1 (Marcona, development preview)"
+VERSION="0.1 (Marcona, AALDM development preview)"
 VERSION_CODENAME=trixie
+VARIANT="AALDM (A All Little Distribution Model)"
+VARIANT_ID=aaldm
 DEBIAN_VERSION_FULL=13
 HOME_URL="https://almondlinux.github.io/"
 BUG_REPORT_URL="https://github.com/AlmondLinux/almond-linux/issues"
 IDENTITY
-printf 'Almond Linux 0.1 "Marcona" development preview — Debian-based ARM64 VM image\n' > /etc/issue
+printf 'Almond Linux 0.1 "Marcona" AALDM development preview (Debian-based live image)\n' > /etc/issue
