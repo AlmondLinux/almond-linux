@@ -4,3 +4,8 @@
 *.img
 .DS_Store
 docs/NAME-RESEARCH.md
+
+# Almond AI Bridge: local output (packets, dashboard, check results) and secrets
+.bridge-out/
+.env
+.env.*

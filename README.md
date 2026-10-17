@@ -88,7 +88,12 @@ desktop/                        Almond Pure desktop assets (icons, Openbox theme
 branding/                       the Almond logo and boot artwork
 tests/                          measurement tools (measure-memory.sh)
 tools/                          generators for some of the artwork
-docs/                           plan, performance, architecture, build notes, roadmap
+docs/                           plan, performance, architecture, build notes, roadmap,
+                                project status, design rules, AI handoff
+ai-bridge/                      tasks, reports, reviews and decisions for the AI-assisted
+                                workflow (Claude implements, an OpenAI model reviews, the
+                                owner approves); see ai-bridge/README.md
+CLAUDE.md, AGENTS.md            instructions for AI agents working on this repository
 ```
 
 ## Contributing

@@ -1,0 +1,5 @@
+#!/bin/sh
+# Almond AI Bridge command. Usage: ai-bridge/bridge help
+here=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+case "${1:-}" in help|-h) set -- --help ;; esac
+exec python3 "$here/scripts/bridge.py" "$@"

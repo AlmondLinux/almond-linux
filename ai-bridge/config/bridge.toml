@@ -1,0 +1,69 @@
+# Almond AI Bridge configuration.
+# This file is a sensitive path: changing it needs the owner's approval.
+# No secrets here, ever. API keys live in GitHub Actions secrets or in your
+# own terminal's environment (see ai-bridge/docs/SETUP.md).
+
+[project]
+name = "Almond Linux"
+default_base = "main"
+
+[limits]
+# Automated review rounds per task. After this many reviews the task goes to
+# "needs-owner" and no AI review is made until the owner decides. This is
+# what stops Claude and the reviewer from looping forever.
+max_review_rounds = 2
+
+[openai]
+# MASTER SWITCH for paid API reviews, both local (`bridge review --live
+# --yes-spend`) and in GitHub Actions (the ai-review label). Off = no paid
+# call can happen, whatever else is configured.
+enabled = false
+model = "gpt-5-mini"
+# Reasoning tokens are billed as output tokens. "low" keeps them small.
+# Set to "" for models without reasoning.
+reasoning_effort = "low"
+max_output_tokens = 6000
+# Largest review packet that may be sent (about 4 characters per token).
+max_input_chars = 160000
+# Refuse a call whose worst case (full input + max_output_tokens) is above this.
+per_call_limit_usd = 0.10
+# Refuse new calls once this month's spending would pass this.
+# Also set a budget on the OpenAI project itself: that is the only HARD limit.
+monthly_limit_usd = 2.00
+api_url = "https://api.openai.com/v1/responses"
+timeout_seconds = 180
+
+# USD per 1 million tokens. Source: https://developers.openai.com/api/docs/pricing
+# (checked 2026-10-17). Prices change: check before relying on them.
+[pricing]
+"gpt-5-nano" = { input = 0.05, output = 0.40 }
+"gpt-5-mini" = { input = 0.25, output = 2.00 }
+"gpt-5.4-nano" = { input = 0.20, output = 1.25 }
+"gpt-5.4-mini" = { input = 0.75, output = 4.50 }
+"gpt-5.4" = { input = 2.50, output = 15.00 }
+"gpt-4.1-mini" = { input = 0.40, output = 1.60 }
+
+[review]
+# Characters of diff put into a review packet; the rest is cut with a note.
+max_diff_chars = 120000
+# Paths whose diffs are left out of review packets (binary or generated art).
+exclude_paths = ["*.png", "*.webp", "*.jpg", "*.svg", "desktop/icons/*", "ai-bridge/usage/*"]
+
+[sensitive]
+# Changes here always need the owner's explicit approval. Deleted files too.
+paths = [
+  ".github/*",
+  "ai-bridge/config/*",
+  "ai-bridge/scripts/*",
+  "auto/*",
+  "config/hooks/*",
+  "config/package-lists/*",
+  "scripts/build.sh",
+  "branding/logo/*",
+  "branding/almond-logo*",
+  "LICENSE",
+  "NOTICE",
+  "SECURITY.md",
+  "CLAUDE.md",
+  "AGENTS.md",
+]
