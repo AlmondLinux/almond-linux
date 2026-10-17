@@ -1,0 +1,49 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["verdict", "summary", "findings", "status_claims_ok", "honesty_issues", "tests_assessment", "questions_for_owner"],
+  "properties": {
+    "verdict": {
+      "type": "string",
+      "enum": ["approve", "request_changes", "comment"],
+      "description": "approve = ready for the owner; request_changes = must be fixed first; comment = no blocking issue but notes"
+    },
+    "summary": {
+      "type": "string",
+      "description": "Two to five sentences: what the change does and the overall judgement"
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["severity", "file", "line", "issue", "suggestion"],
+        "properties": {
+          "severity": {"type": "string", "enum": ["blocker", "major", "minor", "nit"]},
+          "file": {"type": "string", "description": "Repository path, or \"general\""},
+          "line": {"type": ["integer", "null"], "description": "Line in the new file, or null"},
+          "issue": {"type": "string"},
+          "suggestion": {"type": "string"}
+        }
+      }
+    },
+    "status_claims_ok": {
+      "type": "boolean",
+      "description": "false if any doc, report or commit claims more than the evidence shows (e.g. TESTED without a test report)"
+    },
+    "honesty_issues": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Each over-claim, quoted with its file"
+    },
+    "tests_assessment": {
+      "type": "string",
+      "description": "Were the right checks run? What is still untested?"
+    },
+    "questions_for_owner": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Decisions only the owner can make"
+    }
+  }
+}

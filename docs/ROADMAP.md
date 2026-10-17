@@ -2,7 +2,7 @@
 
 No deadline is promised before a first timed build.
 
-Status words: **Planned** · **Implemented (source exists, untested)** · **Tested** · **Released**.
+Status words: **Planned** · **Implemented (source exists, untested)** · **Tested** · **Released**. The per-component status, on the ladder PLANNED → DESIGNED → IMPLEMENTED → TESTED → APPROVED, is kept in [PROJECT_STATUS.md](PROJECT_STATUS.md).
 
 | Version | Objective | Status | Required evidence |
 |---|---|---|---|
