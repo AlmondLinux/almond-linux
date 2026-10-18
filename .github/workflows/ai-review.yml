@@ -1,0 +1,56 @@
+# Optional PAID review of a pull request by an OpenAI model.
+#
+# Nothing happens (and nothing is paid) unless ALL of these are true:
+#   1. openai.enabled = true in ai-bridge/config/bridge.toml on the default branch
+#   2. the repository secret OPENAI_API_KEY exists
+#   3. the owner adds the label "ai-review" to a PR, or runs this workflow by hand
+#   4. the PR has had fewer than max_review_rounds AI reviews
+#   5. this month's recorded spending is under monthly_limit_usd
+#
+# Security: pull_request_target runs THIS file and the bridge script from the
+# default branch, never code from the PR. The PR's diff is only read as text
+# (gh pr diff) and sent to the model. The API key is never given to PR code.
+# Comments posted with GITHUB_TOKEN do not trigger workflows, so it cannot loop.
+name: AI review (OpenAI, paid, opt-in)
+
+on:
+  pull_request_target:
+    types: [labeled]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: "Pull request number to review"
+        required: true
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: ai-review-${{ github.event.pull_request.number || inputs.pr }}
+  cancel-in-progress: false
+
+jobs:
+  review:
+    if: github.event_name == 'workflow_dispatch' || github.event.label.name == 'ai-review'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out the default branch (never the PR's code)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+      - name: Review
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr }}
+        run: python3 ai-bridge/scripts/bridge.py ci-review --pr "$PR_NUMBER"
+      - name: Remove the ai-review label (adding it again = a new, explicit request)
+        if: always() && github.event_name == 'pull_request_target'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: gh pr edit "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --remove-label ai-review || true

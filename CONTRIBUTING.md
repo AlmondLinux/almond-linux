@@ -1,6 +1,6 @@
 # Contributing to Almond Linux
 
-Thank you for your interest. Almond is at the very beginning: no ISO has been built yet. That shapes what help is useful right now.
+Thank you for your interest. Almond is at the very beginning: the first ISO has only been built and booted once, in a virtual machine. That shapes what help is useful right now.
 
 ## Most useful right now
 

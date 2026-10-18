@@ -1,0 +1,15 @@
+# The owner is asked to review changes to these paths.
+# Same list as [sensitive] in ai-bridge/config/bridge.toml.
+/.github/                 @Xela-CL
+/ai-bridge/config/        @Xela-CL
+/ai-bridge/scripts/       @Xela-CL
+/auto/                    @Xela-CL
+/config/hooks/            @Xela-CL
+/config/package-lists/    @Xela-CL
+/scripts/build.sh         @Xela-CL
+/branding/logo/           @Xela-CL
+/LICENSE                  @Xela-CL
+/NOTICE                   @Xela-CL
+/SECURITY.md              @Xela-CL
+/CLAUDE.md                @Xela-CL
+/AGENTS.md                @Xela-CL

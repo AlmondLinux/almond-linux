@@ -1,0 +1,90 @@
+Almond Linux memory report
+==========================
+Date (local):  2026-10-17 15:46:15 UTC
+Date (UTC):    2026-10-17T15:46:15Z
+System:        Almond Linux 0.1 Marcona (AALDM development preview)
+Kernel:        Linux 6.12.113+deb13-amd64 x86_64
+Uptime:        329 s
+Measured as:   uid 0
+Units:         MiB (1 MiB = 1024 KiB), from the kernel's kB figures.
+Method:        docs/PERFORMANCE.md (fresh boot, 120 s idle, 5 boots, median).
+
+System memory (/proc/meminfo)
+------------------------------
+MemTotal:         1973.7 MiB  (2021028 kB)
+MemFree:          1086.3 MiB  (1112356 kB)
+MemAvailable:     1560.5 MiB  (1597956 kB)
+Buffers:             1.7 MiB  (1708 kB)
+Cached:            620.8 MiB  (635660 kB)
+Shmem:              31.6 MiB  (32384 kB)
+SwapTotal:         986.5 MiB  (1010172 kB)
+SwapFree:          986.5 MiB  (1010172 kB)
+
+Used               413.2 MiB  (423072 kB)
+               = MemTotal - MemAvailable (the figure AALDM targets use)
+Available         1560.5 MiB  (1597956 kB)
+Swap used            0.0 MiB  (0 kB)
+zram0                0.0 MiB stored, 0.0 MiB compressed, 0.0 MiB RAM used
+
+Top 25 processes by PSS (/proc/<pid>/smaps_rollup)
+----------------------------------------------------
+    PID  USER             PSS       RSS    SHARED   PRIVATE   SWAPPSS  COMMAND
+   1030  root            93.9     104.7      14.4      90.3       0.0  Xorg
+   1126  almond          18.7      50.9      38.4      12.5       0.0  pcmanfm-qt
+   1058  almond          17.5      28.0      13.1      14.9       0.0  pulseaudio
+   1209  almond          13.6      41.8      32.9       9.0       0.0  nm-tray
+   1129  almond          12.6      43.6      36.4       7.3       0.0  lxqt-panel
+   1247  almond          12.3      41.5      34.2       7.3       0.0  qterminal
+   1207  almond          10.2      37.8      31.2       6.6       0.0  lxqt-powermanag
+   1128  almond           9.8      39.7      34.4       5.3       0.0  lxqt-notificati
+    960  root             9.4      19.0      11.5       7.4       0.0  NetworkManager
+   1121  almond           8.7      18.9      12.3       6.6       0.0  openbox
+   1081  almond           7.5      32.7      28.1       4.6       0.0  lxqt-session
+   1127  almond           6.8      30.8      26.7       4.0       0.0  lxqt-globalkeys
+   1130  almond           6.7      32.1      28.3       3.8       0.0  lxqt-policykit-
+    958  root             5.9      13.8       8.8       5.0       0.0  udisksd
+      1  root             5.6      13.9      10.6       3.3       0.0  systemd
+   1040  almond           4.3      12.4      10.2       2.2       0.0  systemd
+    428  root             3.6      10.0       7.2       2.8       0.0  systemd-udevd
+    377  root             3.5       9.7       7.0       2.8       0.0  systemd-journal
+    961  root             3.1       6.8       3.9       2.8       0.0  wpa_supplicant
+   1216  root             2.9      10.3       8.0       2.3       0.0  upowerd
+   1179  almond           2.9      10.9       9.1       1.9       0.0  gvfs-udisks2-vo
+    996  polkitd          2.7       9.0       6.7       2.3       0.0  polkitd
+    957  root             2.3       8.9       7.4       1.5       0.0  systemd-logind
+   1162  almond           2.0       8.7       7.6       1.2       0.0  gvfsd-trash
+   1042  almond           1.9       3.6       1.8       1.8       0.0  (sd-pam)
+(MiB. RSS counts shared pages in full for every process; PSS divides each
+ shared page between the processes that map it, so PSS values add up.)
+
+PSS by AALDM component (budgets: docs/PERFORMANCE.md)
+-----------------------------------------------------
+X server (Xorg)                               93.9 MiB  (processes: 1)
+Display manager (LightDM)                      3.1 MiB  (processes: 2)
+Window manager (Openbox)                       8.7 MiB  (processes: 1)
+LXQt session + panel (lxqt-*)                 53.6 MiB  (processes: 6)
+Desktop + file manager (pcmanfm-qt)           18.7 MiB  (processes: 1)
+Network tray (nm-tray)                        13.6 MiB  (processes: 1)
+Launcher (rofi)                                0.0 MiB  (processes: 0)
+Audio (PulseAudio/PipeWire)                   17.5 MiB  (processes: 1)
+Files and devices (gvfs, udisks2)             15.7 MiB  (processes: 7)
+Network service (NetworkManager)              12.5 MiB  (processes: 2)
+Other processes of the session user           24.8 MiB  (processes: 8)
+Other system processes                        25.4 MiB  (processes: 10)
+
+Totals (PSS)
+------------
+Session user:                       almond
+Session user processes:             146.7 MiB (processes: 24)
+X server (Xorg):                    93.9 MiB
+Display manager (LightDM):          3.1 MiB
+DESKTOP SESSION TOTAL:              243.7 MiB  (session user + Xorg + LightDM)
+All other processes (system):       43.7 MiB
+All readable processes:             287.4 MiB (processes: 40)
+Kernel threads (no user memory):    0
+Unreadable or exited during scan:   72
+
+Notes: "Used" above also counts the kernel, page tables, tmpfs/Shmem (in
+a live session every file written lives in RAM) and zram, which no process
+owns, so "Used" and the PSS total are not expected to match. This script
+is excluded from the table; the sudo or shell that started it is not.
