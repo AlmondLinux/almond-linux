@@ -51,3 +51,66 @@ class Resume(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+from test_duo import Sandbox, plan, review
+
+
+class Recovery(Sandbox):
+    def exercise(self, result, commit_error=None):
+        with mock.patch.object(duo, 'step_implement', return_value=({'summary': 'x', 'files_changed': [],
+                    'tests_run': [], 'not_done': [], 'notes_for_reviewer': ''}, None)) as implement, \
+                mock.patch.object(bridge, 'run_checks', return_value=[{'name': 'test', 'status': 'pass', 'detail': ''}]), \
+                mock.patch.object(duo, 'commit_all', side_effect=commit_error), \
+                mock.patch.object(duo, 'step_review', return_value=(result, None)), \
+                mock.patch.object(duo, 'say') as say:
+            outcome = duo.implement_rounds(self.cfg, self.tid, 'claude', 'codex', plan(), 'main')
+            return outcome, implement, say
+
+    def test_approval_with_unverified_claims_needs_owner(self):
+        r = review('approve'); r['status_claims_ok'] = False
+        self.assertEqual(self.exercise(r)[0][0], 'needs-owner')
+
+    def test_approval_with_honesty_issue_needs_owner(self):
+        r = review('approve'); r['honesty_issues'] = ['not measured']
+        self.assertEqual(self.exercise(r)[0][0], 'needs-owner')
+
+    def test_approval_with_question_needs_owner(self):
+        r = review('approve'); r['questions_for_owner'] = ['Choose a direction']
+        self.assertEqual(self.exercise(r)[0][0], 'needs-owner')
+
+    def test_commit_block_records_needs_owner(self):
+        with self.assertRaises(duo.DuoError):
+            self.exercise(review('approve'), duo.DuoError('Secret scan blocked the commit'))
+        task = bridge.find_task(self.tid)
+        self.assertEqual(task['status'], 'needs-owner')
+        self.assertIn('automatic commit blocked', task['_body'])
+        self.assertEqual(task['review_round'], 0)
+
+    def test_resume_supplies_last_findings_and_failed_checks(self):
+        r = review('request_changes')
+        r['summary'] = 'Fix the previous implementation'
+        bridge.record_review(bridge.find_task(self.tid), r, 'test')
+        task = bridge.find_task(self.tid)
+        task['duo_failed_checks'] = 'Shell syntax'
+        task['duo_base'] = 'a' * 40
+        bridge.save_task(task)
+        outcome, implement, say = self.exercise(review('approve'))
+        self.assertEqual(outcome[0], 'approved')
+        self.assertEqual(implement.call_args.args[4]['summary'], r['summary'])
+        self.assertEqual(implement.call_args.args[5], ['Shell syntax'])
+        self.assertTrue(any(c.args[3] == 'implementation round 2' for c in say.call_args_list))
+        self.assertEqual(bridge.find_task(self.tid)['duo_base'], 'a' * 40)
+
+
+class MissingBase(unittest.TestCase):
+    def test_missing_base_refuses_without_fallback(self):
+        response = mock.Mock(returncode=1, stdout='', stderr='missing')
+        with mock.patch.object(bridge, 'git', return_value=response):
+            with self.assertRaisesRegex(duo.DuoError, 'unavailable'):
+                duo.review_base({'duo_base': 'missing'})
+
+    def test_non_ancestor_base_refuses(self):
+        responses = [mock.Mock(returncode=0, stdout='a'*40+'\n'), mock.Mock(returncode=1)]
+        with mock.patch.object(bridge, 'git', side_effect=responses):
+            with self.assertRaisesRegex(duo.DuoError, 'not an ancestor'):
+                duo.review_base({'duo_base': 'a'*40})

@@ -436,21 +436,38 @@ def implement_rounds(cfg, tid, implementer, reviewer, plan, base_branch):
     if the reviewer approved, until the task's review rounds run out.
     Returns (outcome, rounds, implementations, last review, last checks);
     outcome is "approved" only with an approving review AND no failed check."""
-    ensure_review_budget(bridge.find_task(tid), cfg)
-    findings, failed, implementations, rnd = None, [], [], 0
+    task = bridge.find_task(tid)
+    ensure_review_budget(task, cfg)
+    previous, _ = bridge.latest(tid, "review", ".json")
+    findings = json.loads(bridge.read(previous)) if previous else None
+    failed = [x for x in str(task.get("duo_failed_checks") or "").split("|") if x]
+    implementations, rnd = [], 0
+    previous_rounds = int(task.get("review_round") or 0)
     while True:
         rnd += 1
+        round_number = previous_rounds + rnd
         result, u = step_implement(cfg, bridge.find_task(tid), implementer, plan, findings, failed)
         implementations.append(result)
-        say(tid, NAMES[implementer], NAMES[reviewer], "implementation round %d" % rnd, result, u)
+        say(tid, NAMES[implementer], NAMES[reviewer], "implementation round %d" % round_number, result, u)
         checks = bridge.run_checks(base_branch, cfg)
         failed = [c["name"] for c in checks if c["status"] == "fail"]
         say(tid, "Checks", NAMES[reviewer], "free checks round %d (%s)" % (
-            rnd, "FAILED: %s" % ", ".join(failed) if failed else "all passed"),
+            round_number, "FAILED: %s" % ", ".join(failed) if failed else "all passed"),
             bridge.format_checks(checks, markdown=True))
-        commit_all("%s: duo round %d (%s implements, %s reviews)" % (tid, rnd, NAMES[implementer], NAMES[reviewer]))
+        task = bridge.find_task(tid)
+        task["duo_failed_checks"] = "|".join(failed)
+        bridge.save_task(task)
+        try:
+            commit_all("%s: duo round %d (%s implements, %s reviews)" % (
+                tid, round_number, NAMES[implementer], NAMES[reviewer]))
+        except bridge.BridgeError as exc:
+            task = bridge.find_task(tid)
+            task["status"] = "needs-owner"
+            bridge.save_task(task, "automatic commit blocked; edits retained locally: %s" % exc)
+            say(tid, "Orchestrator", "Owner", "stopped before commit", str(exc))
+            raise
         review, u = step_review(cfg, bridge.find_task(tid), reviewer, base_branch, result, checks)
-        say(tid, NAMES[reviewer], NAMES[implementer], "review round %d (%s)" % (rnd, review["verdict"]), review, u)
+        say(tid, NAMES[reviewer], NAMES[implementer], "review round %d (%s)" % (round_number, review["verdict"]), review, u)
         bridge.record_review(bridge.find_task(tid), review, "%s (duo)" % NAMES[reviewer])
         task = bridge.find_task(tid)
         mx = int(task.get("max_review_rounds") or cfg["limits"]["max_review_rounds"])
@@ -485,8 +502,16 @@ def review_base(task):
     """Persist a commit, not the current task branch, so resumed reviews
     include work from earlier rounds and are unaffected by moving branches."""
     ref = task.get("duo_base") or "HEAD"
-    result = bridge.git("rev-parse", "--verify", "%s^{commit}" % ref, check=True)
-    return result.stdout.strip()
+    result = bridge.git("rev-parse", "--verify", "%s^{commit}" % ref)
+    if result.returncode != 0:
+        raise DuoError("saved duo_base %r is unavailable; set the task's duo_base to the intended "
+                       "verified base commit before resuming" % ref)
+    base = result.stdout.strip()
+    target = task.get("branch") or "HEAD"
+    if bridge.git("merge-base", "--is-ancestor", base, target).returncode != 0:
+        raise DuoError("duo_base %s is not an ancestor of %s; verify the task's review base "
+                       "after rebasing before resuming" % (base, target))
+    return base
 
 
 def commit_all(message):

@@ -106,3 +106,5 @@ env -u OPENAI_API_KEY -u CODEX_API_KEY codex login status
 ```
 
 Use subscription sign-ins for this setup; resolving an authentication failure is not authorization to enable API billing. The local tools and the computer must remain running during a task. This is an on-demand workflow, not an always-on watcher of existing chat windows.
+
+A secret-scan or automatic-commit failure is a hard stop: the task is marked `needs-owner`, its transcript records the stop, and local edits are retained without committing them. Repair those files before resuming. Other failed checks use the bounded fix loop. On a retry, the previous review and failed check names are passed to the implementer and round labels continue counting. If a saved review base is missing or no longer an ancestor after a rebase, duo refuses to guess a replacement; verify and update `duo_base` explicitly.
