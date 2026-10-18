@@ -1,5 +1,7 @@
 # AI handoff
 
+Automatic joint workflow: [duo validation](../ai-bridge/docs/DUO-VALIDATION.md) records a real Claude plan → Codex critique → Claude implementation → checks → Codex review cycle. Use the duo instructions for owner-requested joint tasks; no automatic merge or background chat mirroring.
+
 Conversation context: [project knowledge base](knowledge/README.md), imported 2026-10-18 (T-0009). Only five recent ChatGPT turns were accessible; full export and mockups remain missing. Read its chronology for corrected names, visual approval scope, and precise VM coverage. This import changes no OS component status.
 
 Read this first if you are an AI agent (Claude, Codex, ChatGPT or another model) picking up Almond Linux work. It says where things stand and what to do next. Humans are welcome too.

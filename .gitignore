@@ -10,6 +10,7 @@ docs/NAME-RESEARCH.md
 .env
 .env.*
 
-# Python caches (the duo orchestrator commits with git add -A)
+# Python caches at any depth (duo refuses to start on a dirty tree and
+# commits with git add -A, so generated files must never show up)
 __pycache__/
-*.pyc
+*.py[cod]

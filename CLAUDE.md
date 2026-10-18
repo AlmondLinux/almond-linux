@@ -58,3 +58,9 @@ You are the **implementer** for Almond Linux, an independent Debian-based Linux 
 - Debian 13 "trixie", live-build, amd64 hybrid BIOS+UEFI ISO; arm64 is a development variant only. The Mac cannot build the amd64 ISO; the owner's Windows PC (VirtualBox) is the build machine (`docs/PC-SETUP.md`).
 - Shell scripts are POSIX `sh` and must pass `sh -n` and `dash -n`. Python tools use the standard library only.
 - Commits in this repository use the owner's noreply address (already set in the local git config).
+
+## Automatic collaboration when requested
+
+When the owner asks Claude and Codex to work together, use `ai-bridge/bridge duo <task-id>` from a clean, dedicated feature checkout. The orchestrator handles planning, independent plan review, implementation, checks, independent code review, bounded fixes and transcript/report creation. Read `ai-bridge/docs/DUO.md` first. Do not run two jobs or edit files manually in that same checkout during a run.
+
+For a single read-only consultation, use `ai-bridge/bridge ask claude|codex --from-ai "question"`; the other model's answer is logged automatically. No user copy/paste is needed. Child agents called by duo must not recursively launch duo or other workflow commands. Return unresolved decisions and the final result to the owner; no automatic merge or publication. This starts fresh CLI agents using shared repository knowledge, not the owner's existing chat histories.

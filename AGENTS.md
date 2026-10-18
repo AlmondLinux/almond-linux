@@ -85,3 +85,9 @@ They are saved as *proposed* decisions and *backlog* tasks. Only the owner accep
 - Merge, approve, or change repository settings, secrets, workflows or releases
 - Make paid API calls on your own initiative
 - Present your output as coming from the owner or from the owner's ChatGPT conversation
+
+## Automatic collaboration when requested
+
+When the owner asks Claude and Codex to work together, use `ai-bridge/bridge duo <task-id>` from a clean, dedicated feature checkout. The orchestrator handles planning, independent plan review, implementation, checks, independent code review, bounded fixes and transcript/report creation. Read `ai-bridge/docs/DUO.md` first. Do not run two jobs or edit files manually in that same checkout during a run.
+
+For a single read-only consultation, use `ai-bridge/bridge ask claude|codex --from-ai "question"`; the other model's answer is logged automatically. No user copy/paste is needed. Child agents called by duo must not recursively launch duo or other workflow commands. Return unresolved decisions and the final result to the owner; no automatic merge or publication. This starts fresh CLI agents using shared repository knowledge, not the owner's existing chat histories.

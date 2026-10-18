@@ -44,3 +44,7 @@ The self-tests replace the OpenAI API with a fake and write only to a temporary 
 
 1. Open any small PR. The **Almond checks** job should appear and pass; its summary is on the run's page.
 2. Optional, if you did SETUP step B: add the `ai-review` label. Expect one comment within two minutes, the label removed, and the cost in the comment.
+
+## Follow-up duo validation
+
+See [DUO-VALIDATION.md](DUO-VALIDATION.md) for the real Claude → Codex plan/implement/review cycle, 68-test suite and current fake end-to-end results. Earlier counts and “not tested” notes above are historical snapshots.
