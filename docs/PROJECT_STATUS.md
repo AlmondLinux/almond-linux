@@ -66,6 +66,7 @@ Edition names confirmed by the owner on 2026-10-18 ([D-0002](../ai-bridge/decisi
 | **Almond Shield** | **Optional** antivirus and security center (scanning, quarantine, warnings) | **PLANNED** — proposal | The base OS must stay secure without it. Today's security defaults: [ARCHITECTURE.md](ARCHITECTURE.md#security-and-lifecycle-boundaries); nftables is installed but has no rules. (T-0002) |
 | **Performance modes** | Presets **Potato / Medium / High**, user-overridable | **PLANNED** — design requirement | No figures exist. Open: do they apply to AALDM? Medium/High include transparency and animation, which AALDM's rules forbid. (T-0002) |
 | Customisation | LXQt/Openbox settings tools now; "Almond Personalize" app later | **PLANNED** | [AALDM-PLAN §10](AALDM-PLAN.md#10-customisation). Requirements in [DESIGN_RULES.md](DESIGN_RULES.md#customisation-requirements) |
+| `almond` command | Terminal system information: Almond mark, edition, kernel, CPU, GPU, RAM used, uptime (`/usr/bin/almond`, staged from `desktop/defaults/usr/bin/`) | **IMPLEMENTED** | Task T-0006. Checked with `dash` against fake /proc and /sys trees on macOS; never run on Almond. The ASCII mark is a proposal awaiting the owner's approval |
 | Memory measurement | `tests/measure-memory.sh` | **TESTED (VM)** | Ran in the live image on 2026-10-17. Possible bug: counts 72 processes as unreadable while reporting 0 kernel threads |
 | Installer | Graphical installer | **PLANNED** | Version 0.5 |
 | Website | almondlinux.github.io | Live | Separate repository `AlmondLinux/almondlinux.github.io`. Still says no ISO has been built: needs updating |
@@ -124,9 +125,9 @@ Generated from `ai-bridge/tasks/` by `ai-bridge/bridge handoff`. Do not edit bet
 | [T-0004](../ai-bridge/tasks/T-0004-first-boot-polish-and-docs-fixes-from-the-first.md) | First-boot polish and docs fixes from the first VM test | backlog | claude | 0/2 |  |
 | [T-0005](../ai-bridge/tasks/T-0005-owner-feedback-desktop-icons-and-a-start-menu.md) | Owner feedback: desktop icons and a start menu | backlog | claude | 0/2 |  |
 | [T-0002](../ai-bridge/tasks/T-0002-confirm-component-definitions.md) | Confirm component definitions, edition names and AALLDM design status | ready | owner | 0/2 |  |
-| [T-0006](../ai-bridge/tasks/T-0006-almond-a-terminal-system-information-command.md) | almond: a terminal system-information command | ready | claude | 0/2 |  |
 | [T-0007](../ai-bridge/tasks/T-0007-install-almond-linux-option-with-calamares.md) | Install Almond Linux option with Calamares | ready | claude | 0/2 |  |
 | [T-0008](../ai-bridge/tasks/T-0008-website-status-update-for-the-first-vm-boot.md) | Website status update for the first VM boot | ready | claude | 0/2 |  |
+| [T-0006](../ai-bridge/tasks/T-0006-almond-a-terminal-system-information-command.md) | almond: a terminal system-information command | review | claude | 0/2 |  |
 | [T-0001](../ai-bridge/tasks/T-0001-first-iso-build-and-vm-boot.md) | First AALDM ISO build and VM boot test | needs-owner | claude-pc | 0/2 |  |
 <!-- bridge:tasks:end -->
 

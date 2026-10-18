@@ -1,13 +1,13 @@
 ---
 id: T-0006
 title: "almond: a terminal system-information command"
-status: ready
+status: review
 priority: medium
 area: desktop
 assignee: claude
 created: 2026-10-18
 updated: 2026-10-18
-branch: 
+branch: task/T-0006-almond-a-terminal-system-informa
 pr: 
 review_round: 0
 max_review_rounds: 2
@@ -26,12 +26,12 @@ A small command, `almond`, that prints the Almond terminal mark and real system 
 
 ## Acceptance criteria
 
-- [ ] POSIX `sh`, no new packages (uses /proc, /sys, /etc/os-release, `uname`, and `lspci` from pciutils, which is already in the image)
-- [ ] Every value is read from the running system; anything that cannot be read is shown as "unknown", never guessed
-- [ ] Shows: edition (from /etc/os-release), kernel, CPU model and thread count, GPU(s), RAM used / total, uptime
-- [ ] `--no-color`, `--no-logo`, `--help`; colours off automatically when output is not a terminal
-- [ ] Testable on a non-Linux host against a fake /proc, /sys and os-release
-- [ ] The terminal mark is marked as a proposal until the owner approves it (it is not the official logo)
+- [x] POSIX `sh`, no new packages (uses /proc, /sys, /etc/os-release, `uname`, and `lspci` from pciutils, which is already in the image)
+- [x] Every value is read from the running system; anything that cannot be read is shown as "unknown", never guessed
+- [x] Shows: edition (from /etc/os-release), kernel, CPU model and thread count, GPU(s), RAM used / total, uptime
+- [x] `--no-color`, `--no-logo`, `--help`; colours off automatically when output is not a terminal
+- [x] Testable on a non-Linux host against a fake /proc, /sys and os-release
+- [x] The terminal mark is marked as a proposal until the owner approves it (it is not the official logo)
 
 ## Tests to run
 
@@ -45,3 +45,5 @@ A small command, `almond`, that prints the Almond terminal mark and real system 
 
 ## Log
 - 2026-10-18 15:00 — created at the owner's request (Claude, Mac)
+- 2026-10-18 14:43 — started on branch task/T-0006-almond-a-terminal-system-informa
+- 2026-10-18 14:45 — implementation report 1 written (all checks passed)

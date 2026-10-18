@@ -1,0 +1,205 @@
+#!/bin/sh
+# almond: show the Almond terminal mark and real information about this system.
+#
+#     almond              mark + system information
+#     almond --no-logo    information only
+#     almond --no-color   no colours (also automatic when output is not a terminal)
+#
+# Every value is read from the running system (/etc/os-release, uname,
+# /proc, /sys, and lspci from pciutils). Anything that cannot be read is shown
+# as "unknown"; nothing is guessed. Nothing stays running.
+#
+# The ASCII almond is a proposal for a terminal mark, not the official logo
+# (the official logo is only used as the provided image files).
+#
+# For tests on other systems, these point the script at fake trees:
+#   ALMOND_PROC, ALMOND_SYS, ALMOND_OS_RELEASE, ALMOND_KERNEL, ALMOND_LSPCI
+#
+# Part of Almond Linux. MIT License; see LICENSE and NOTICE.
+# Status: Implemented (source exists, untested at runtime; checked with dash
+# against fake /proc and /sys trees on macOS).
+
+set -u
+
+proc=${ALMOND_PROC:-/proc}
+sys=${ALMOND_SYS:-/sys}
+os_release=${ALMOND_OS_RELEASE:-/etc/os-release}
+if [ ! -r "$os_release" ] && [ -z "${ALMOND_OS_RELEASE:-}" ]; then
+    os_release=/usr/lib/os-release
+fi
+lspci_cmd=${ALMOND_LSPCI:-lspci}
+
+show_logo=1
+color=1
+[ -t 1 ] || color=0
+[ -n "${NO_COLOR:-}" ] && color=0
+
+for arg in "$@"; do
+    case $arg in
+        --no-logo) show_logo=0 ;;
+        --no-color | --no-colour) color=0 ;;
+        -h | --help)
+            sed -n '2,6s/^# \{0,1\}//p' "$0"
+            exit 0
+            ;;
+        *)
+            echo "almond: unknown option: $arg (try --help)" >&2
+            exit 2
+            ;;
+    esac
+done
+
+if [ "$color" -eq 1 ]; then
+    brown=$(printf '\033[38;5;130m')
+    gold=$(printf '\033[38;5;179m')
+    label=$(printf '\033[1;38;5;180m')
+    reset=$(printf '\033[0m')
+else
+    brown='' gold='' label='' reset=''
+fi
+
+# --- read one key from os-release (values may be quoted).
+os_value() {
+    [ -r "$os_release" ] || return 0
+    sed -n "s/^$1=//p" "$os_release" | tail -n 1 | sed 's/^"\(.*\)"$/\1/; s/^'"'"'\(.*\)'"'"'$/\1/'
+}
+
+edition=$(os_value PRETTY_NAME)
+[ -n "$edition" ] || edition=$(os_value NAME)
+[ -n "$edition" ] || edition=unknown
+
+kernel=${ALMOND_KERNEL:-$(uname -sr 2>/dev/null)}
+[ -n "$kernel" ] || kernel=unknown
+
+# --- CPU: model name and number of logical CPUs from /proc/cpuinfo.
+cpu=unknown
+if [ -r "$proc/cpuinfo" ]; then
+    model=$(sed -n 's/^model name[[:space:]]*:[[:space:]]*//p' "$proc/cpuinfo" | head -n 1)
+    [ -n "$model" ] || model=$(sed -n 's/^Hardware[[:space:]]*:[[:space:]]*//p' "$proc/cpuinfo" | head -n 1)
+    [ -n "$model" ] || model=$(sed -n 's/^Model[[:space:]]*:[[:space:]]*//p' "$proc/cpuinfo" | head -n 1)
+    threads=$(grep -c '^processor' "$proc/cpuinfo")
+    model=$(printf '%s' "$model" | tr -s ' ')
+    if [ -n "$model" ] && [ "$threads" -gt 0 ]; then
+        cpu="$model ($threads threads)"
+    elif [ -n "$model" ]; then
+        cpu=$model
+    elif [ "$threads" -gt 0 ]; then
+        cpu="unknown model ($threads threads)"
+    fi
+fi
+
+# --- GPU: lspci names if available, otherwise the PCI vendor from /sys.
+vendor_name() {
+    case $1 in
+        0x8086) echo Intel ;;
+        0x1002) echo AMD ;;
+        0x10de) echo NVIDIA ;;
+        0x15ad) echo VMware ;;
+        0x80ee) echo VirtualBox ;;
+        0x1af4 | 0x1b36) echo "Red Hat (virtio/QEMU)" ;;
+        0x1234) echo QEMU ;;
+        *) echo "vendor ${1#0x}" ;;
+    esac
+}
+
+gpus=''
+if command -v "$lspci_cmd" >/dev/null 2>&1; then
+    # lspci -mm: Slot "Class" "Vendor" "Device" ...
+    gpus=$("$lspci_cmd" -mm 2>/dev/null |
+        grep -E '"(VGA compatible controller|3D controller|Display controller)"' |
+        sed -n 's/^[^"]*"[^"]*" "\([^"]*\)" "\([^"]*\)".*/\1 \2/p')
+fi
+if [ -z "$gpus" ]; then
+    for card in "$sys"/class/drm/card[0-9]*; do
+        [ -r "$card/device/vendor" ] || continue
+        case ${card##*/} in *-*) continue ;; esac # connectors like card0-HDMI-A-1
+        v=$(cat "$card/device/vendor")
+        d=$(cat "$card/device/device" 2>/dev/null)
+        line="$(vendor_name "$v") (PCI ${v#0x}:${d#0x})"
+        gpus=${gpus:+$gpus
+}$line
+    done
+fi
+[ -n "$gpus" ] || gpus=unknown
+
+# --- RAM: the same "used" figure as tests/measure-memory.sh.
+ram=unknown
+if [ -r "$proc/meminfo" ]; then
+    ram=$(awk '
+        /^MemTotal:/ { t = $2 }
+        /^MemAvailable:/ { a = $2; seen = 1 }
+        END {
+            if (t > 0 && seen) printf "%d MiB used of %d MiB (%d%%)", (t - a) / 1024, t / 1024, 100 * (t - a) / t
+            else if (t > 0) printf "%d MiB total", t / 1024
+        }' "$proc/meminfo")
+    [ -n "$ram" ] || ram=unknown
+fi
+
+# --- Uptime from /proc/uptime.
+uptime_text=unknown
+if [ -r "$proc/uptime" ]; then
+    uptime_text=$(awk '{
+        s = int($1); d = int(s / 86400); h = int((s % 86400) / 3600); m = int((s % 3600) / 60)
+        out = ""
+        if (d) out = d (d == 1 ? " day, " : " days, ")
+        if (d || h) out = out h " h "
+        print out m " min"
+    }' "$proc/uptime")
+fi
+
+# --- Print: mark on the left, information on the right.
+n=0
+add() { # $1 label, $2 value
+    n=$((n + 1))
+    if [ -n "$1" ]; then
+        eval "info_$n=\"\${label}\$1\${reset}  \$2\""
+    else
+        eval "info_$n=\"\$2\""
+    fi
+}
+add '' "${label}Almond Linux${reset}  Simple. Powerful. Yours."
+add '' ''
+add 'Edition' "$edition"
+add 'Kernel ' "$kernel"
+add 'CPU    ' "$cpu"
+first=1
+old_ifs=$IFS
+IFS='
+'
+for g in $gpus; do
+    if [ "$first" -eq 1 ]; then add 'GPU    ' "$g"; first=0; else add '       ' "$g"; fi
+done
+IFS=$old_ifs
+add 'RAM    ' "$ram"
+add 'Uptime ' "$uptime_text"
+
+logo_1="${brown}        .--.       ${reset}"
+logo_2="${brown}      .'    '.     ${reset}"
+logo_3="${brown}     /  ${gold}.--.${brown}  \\    ${reset}"
+logo_4="${brown}    |  ${gold}/ .-.${brown}   |   ${reset}"
+logo_5="${brown}    |  ${gold}| ( (${brown}   |   ${reset}"
+logo_6="${brown}    |  ${gold}\\ '-'${brown}   |   ${reset}"
+logo_7="${brown}     \\  ${gold}'--'${brown}  /    ${reset}"
+logo_8="${brown}      '.    .'     ${reset}"
+logo_9="${brown}        '--'       ${reset}"
+logo_lines=9
+
+rows=$n
+[ "$show_logo" -eq 1 ] && [ "$logo_lines" -gt "$rows" ] && rows=$logo_lines
+i=1
+while [ "$i" -le "$rows" ]; do
+    left=''
+    right=''
+    if [ "$show_logo" -eq 1 ]; then
+        if [ "$i" -le "$logo_lines" ]; then
+            eval "left=\$logo_$i"
+        else
+            left='                   '
+        fi
+    fi
+    if [ "$i" -le "$n" ]; then
+        eval "right=\$info_$i"
+    fi
+    printf '%s%s\n' "$left" "$right"
+    i=$((i + 1))
+done
