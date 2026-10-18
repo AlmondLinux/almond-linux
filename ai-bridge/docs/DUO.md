@@ -1,5 +1,25 @@
 # Duo mode: Claude and Codex work together
 
+## The one Almond chat
+
+```sh
+ai-bridge/bridge view --open
+```
+
+**One conversation** between you, Claude and Codex, at http://127.0.0.1:4820 (in the Claude desktop app: the `almond-duo` browser preview). Type at the bottom:
+
+- **Task:** Claude and Codex plan it, build it, review each other, and **open a PR when done**. You only merge.
+- **Question:** Claude answers, then Codex checks the answer (agrees or corrects it).
+- **They ask you something:** the chat shows the question and "waiting for your answer". Type the answer and press Send; the task carries on by itself. No commands needed.
+
+Everything stays in that one chat, at `.bridge-out/chat.md` (local, survives branch switches). Each AI also keeps **one session for the whole chat**, so it remembers earlier tasks and answers. `ai-bridge/bridge chat --new` starts fresh sessions and keeps the log. `ai-bridge/bridge chat` shows the status. Each task's transcript is also committed with its PR (`ai-bridge/conversations/T-xxxx.md`).
+
+Messages are handled one at a time, in order. Tasks branch from the branch the repository is on when the task starts, and the repository goes back to that branch afterwards.
+
+The page only answers on 127.0.0.1 or localhost, and every message needs a secret that changes each time the page starts, so other websites can't send it commands.
+
+## Running a task from a terminal
+
 You give one task. Claude and Codex plan it, check each other, build it and review it, each doing the part it is better at. Every message between them is written to a transcript you can read. You approve the result.
 
 ```sh
@@ -59,7 +79,8 @@ The main reason to use two models: **each catches mistakes the other is blind to
 - **Plan critique rounds:** one. **Review rounds:** at most 2 (`max_review_rounds`). After that the task goes to you, even if they still disagree.
 - **Questions only you can answer** (in the plan) stop the run **before any code is written.** Answer them in the task file or tell Claude, then run `ai-bridge/bridge duo T-xxxx` again.
 - **Branches:** duo works on its own branch (`task/T-xxxx-…`), stacked on the branch you started from. It refuses to start with uncommitted changes, or on `main`.
-- **Commits:** the orchestrator makes one commit per round. **It never pushes, opens PRs or merges.**
+- **Commits:** one commit per round. When a task is done, it pushes the task branch and opens a PR against the branch it started from (`open_pr = true` in `bridge.toml [duo]`; set it to `false` to keep branches local). **It never merges.**
+- **If a run fails partway,** the work so far is committed to the task branch and the repository goes back to the base branch, so the next message still works.
 - **What each AI may do:**
   - Codex runs in its sandbox: read-only for planning and review, workspace-write (no network) for implementing.
   - Headless Claude gets an allowlist: read tools, plus edit tools and syntax checks when implementing. `git commit`, `git push`, `git checkout`, `rm` and web tools are denied.
@@ -74,6 +95,14 @@ Both run on subscriptions you already have:
 - **No surprise billing:** `ANTHROPIC_API_KEY` and `OPENAI_API_KEY` are removed from their environment, so no per-token API billing starts by accident.
 - **Plan allowance:** a run uses some of each plan's usage. The transcript shows Codex's tokens and Claude's "API-equivalent" figure; that figure is not a charge on a subscription.
 - **Your Codex settings:** `~/.codex/config.toml` sets the model to `gpt-6-astra` with `service_tier = "priority"`, and duo uses those settings. If priority uses your allowance faster, set `codex_model` in `bridge.toml [duo]`, or change your Codex config.
+
+## Questions for both
+
+```sh
+ai-bridge/bridge discuss "Is the 300 MiB target measured with a terminal open?"
+```
+
+Claude answers, then Codex checks the answer. Both replies go to the chat. The chat page's **Question** mode does exactly this.
 
 ## Asking the other AI a question
 

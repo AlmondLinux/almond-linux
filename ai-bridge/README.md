@@ -63,7 +63,9 @@ Run from the repository root. Python 3.11+ and git; `gh` for PR features.
 | `ai-bridge/bridge dashboard --open` | Writes and opens `.bridge-out/dashboard.html` (tasks, component status, reviews, spending) |
 | `ai-bridge/bridge ready T-0004` | Moves a backlog task (e.g. one ChatGPT proposed) to ready |
 | `ai-bridge/bridge duo "task"` | **Claude and Codex work on it together**: plan, critique, implement, review (max 2 rounds), transcript in `conversations/`. Never pushes. See [docs/DUO.md](docs/DUO.md) |
-| `ai-bridge/bridge view --open` | Live page of Claude ↔ Codex conversations (http://127.0.0.1:4820), updating as they talk |
+| `ai-bridge/bridge view --open` | **The one Almond chat** (http://127.0.0.1:4820): you, Claude and Codex in one conversation. Type tasks, questions and answers there |
+| `ai-bridge/bridge discuss "question"` | Claude answers, Codex checks the answer; both go to the chat |
+| `ai-bridge/bridge chat [--new]` | Chat status (sessions, working, waiting for you); `--new` starts fresh AI sessions |
 | `ai-bridge/bridge ask codex "question"` | Read-only question to Codex (or `ask claude`); answers kept in `conversations/ask-<date>.md` |
 | `ai-bridge/bridge approve T-0001` | **Owner only.** Refuses to run without a real terminal, asks you to type the id, then offers to merge the PR |
 

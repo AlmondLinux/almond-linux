@@ -83,6 +83,12 @@ plan_reviewer = "codex"     # criticises the plan once before any code
 # "claude" or "codex". The reviewer is always the other one.
 implementer = "plan"
 timeout_minutes = 25        # per AI call
+# One chat: each AI keeps one session across all tasks and questions, so it
+# remembers earlier turns. `ai-bridge/bridge chat --new` starts fresh ones.
+one_session = true
+# When a task is done: push its branch and open a PR against the branch it
+# started from (never merges). false = leave the branch local.
+open_pr = true
 # Optional model overrides; empty = each tool's own default.
 claude_model = ""
 codex_model = ""

@@ -31,6 +31,7 @@ You are the **implementer** for Almond Linux, an independent Debian-based Linux 
 ## Working with Codex
 
 - **Duo mode** (`ai-bridge/bridge duo "task"` or `duo T-xxxx`): the owner's preferred way to run a task with both AIs. Details: `ai-bridge/docs/DUO.md`. Start it when the owner asks for it. Do not start duo runs on your own initiative: they use the owner's plan allowances.
+- **The one chat:** the owner talks to both of us in one chat (`ai-bridge/bridge view`, log `.bridge-out/chat.md`). When the owner asks in this terminal session about something discussed there, read that log.
 - **Second opinion:** `ai-bridge/bridge ask codex "question" --from-ai` is read-only and logged. Use it when a fact is uncertain or a change is risky, and say in your report that you did.
 - **Inside a duo run** (your prompt says "duo mode"): only do the current step. Do not run `ai-bridge/bridge` workflow commands, commit, push, switch branches, delete files or use the network; the orchestrator does that.
 

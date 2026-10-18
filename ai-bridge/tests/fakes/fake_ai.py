@@ -40,13 +40,29 @@ elif "Current step: REVIEW" in prompt:
     out = {"verdict": "request_changes" if n == 1 else "approve", "summary": "fake review %d" % n,
            "findings": [{"severity": "minor", "file": "docs/DUO-DEMO.md", "line": 1, "issue": "x", "suggestion": "y"}] if n == 1 else [],
            "status_claims_ok": True, "honesty_issues": [], "tests_assessment": "fake", "questions_for_owner": []}
+elif "Check the answer against the repository" in prompt:
+    out = {"agrees": True, "answer": "fake %s agrees" % who, "confidence": "medium", "sources": ["AGENTS.md"]}
 else:
     out = {"answer": "fake answer from %s" % who, "confidence": "low", "sources": ["AGENTS.md"]}
+if state:
+    os.makedirs(state, exist_ok=True)
+    # Record which session each call used, so tests can check "one chat".
+    with open(os.path.join(state, "sessions.log"), "a") as f:
+        sid = args[args.index("resume") + 1] if "resume" in args else (
+            args[args.index("--resume") + 1] if "--resume" in args else "new")
+        f.write("%s %s\n" % (who, sid))
 
 if who == "codex":
     target = args[args.index("-o") + 1]
     open(target, "w").write(json.dumps(out))
-    print("codex\n%s\ntokens used\n1,234" % json.dumps(out))
+    if "--json" in args:
+        if "resume" not in args:
+            print(json.dumps({"type": "thread.started", "thread_id": "fake-codex-thread"}))
+        print(json.dumps({"type": "turn.completed", "usage": {"input_tokens": 1000, "output_tokens": 234}}))
+    else:
+        print("codex\n%s\ntokens used\n1,234" % json.dumps(out))
 else:
+    sid = args[args.index("--resume") + 1] if "--resume" in args else (
+        args[args.index("--session-id") + 1] if "--session-id" in args else "fake-claude-session")
     print(json.dumps({"type": "result", "subtype": "success", "is_error": False, "num_turns": 2,
-                      "total_cost_usd": 0.01, "result": json.dumps(out), "structured_output": out}))
+                      "total_cost_usd": 0.01, "session_id": sid, "result": json.dumps(out), "structured_output": out}))

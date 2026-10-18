@@ -30,10 +30,16 @@ import re
 import shutil
 import subprocess
 import tempfile
+import uuid
 
 import bridge
 
 CONV = os.path.join(bridge.BRIDGE, "conversations")
+# The one live chat and local state live in .bridge-out/ (git-ignored), so
+# they survive branch switches; each task's transcript is also committed.
+LIVE_CHAT = os.path.join(bridge.OUT, "chat.md")
+SESSIONS = os.path.join(bridge.OUT, "sessions.json")
+STATE = os.path.join(bridge.OUT, "chat-state.json")
 CONFIG_DIR = os.path.join(bridge.BRIDGE, "config")
 SHARED_CONTEXT = [
     "docs/AI_HANDOFF.md",
@@ -110,58 +116,122 @@ def load_schema(name):
         return json.load(f)
 
 
+# ------------------------------------------------------------- sessions
+#
+# One chat: each AI keeps ONE session for the whole Almond chat (Codex: one
+# thread resumed with `codex exec resume`; Claude: one session resumed with
+# `claude -p --resume`), so they remember earlier tasks and answers. Session
+# ids live in .bridge-out/sessions.json (local, not committed).
+# `ai-bridge/bridge chat --new` starts fresh sessions.
+
+def one_session(cfg):
+    return bool(cfg.get("duo", {}).get("one_session", True))
+
+
+def load_sessions():
+    try:
+        with open(SESSIONS, encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return {}
+
+
+def save_session(who, sid):
+    data = load_sessions()
+    if sid:
+        data[who] = sid
+    else:
+        data.pop(who, None)
+    os.makedirs(os.path.dirname(SESSIONS), exist_ok=True)
+    with open(SESSIONS, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
+
+
 # ------------------------------------------------------------------ calls
 
-def call_codex(cfg, prompt, schema_file, write=False, timeout=None):
+def _run(cmd, prompt, env_drop, timeout, who):
+    try:
+        return subprocess.run(cmd, input=prompt, capture_output=True, text=True, cwd=bridge.ROOT,
+                              env=clean_env(env_drop), timeout=timeout)
+    except subprocess.TimeoutExpired:
+        raise DuoError("%s did not finish within %d minutes" % (NAMES[who], timeout // 60))
+
+
+def call_codex(cfg, prompt, schema_file, write=False, timeout=None, _retry=True):
     exe = find_bin("codex", cfg)
     out = tempfile.NamedTemporaryFile(prefix="duo-codex-", suffix=".json", delete=False)
     out.close()
-    cmd = [exe, "exec", "-C", bridge.ROOT, "-s", "workspace-write" if write else "read-only",
-           "--ephemeral", "--color", "never", "--output-schema", schema_path(schema_file),
-           "-o", out.name]
+    mode = "workspace-write" if write else "read-only"
+    sid = load_sessions().get("codex") if one_session(cfg) else None
+    if sid:
+        cmd = [exe, "exec", "resume", sid, "-c", 'sandbox_mode="%s"' % mode]
+    else:
+        cmd = [exe, "exec", "-C", bridge.ROOT, "-s", mode, "--color", "never"]
+        if not one_session(cfg):
+            cmd.append("--ephemeral")
+    cmd += ["--json", "--output-schema", schema_path(schema_file), "-o", out.name]
     model = cfg.get("duo", {}).get("codex_model", "")
     if model:
         cmd += ["-m", model]
     cmd.append("-")
     started = now()
-    try:
-        p = subprocess.run(cmd, input=prompt, capture_output=True, text=True, cwd=bridge.ROOT,
-                           env=clean_env(["OPENAI_API_KEY"]), timeout=timeout)
-    except subprocess.TimeoutExpired:
-        raise DuoError("Codex did not finish within %d minutes" % (timeout // 60))
-    log = (p.stdout or "") + (p.stderr or "")
-    m = re.search(r"tokens used\s*\n\s*([\d,]+)", log)
-    usage = {"tool": "codex", "seconds": int((now() - started).total_seconds()),
-             "tokens": int(m.group(1).replace(",", "")) if m else None}
+    p = _run(cmd, prompt, ["OPENAI_API_KEY"], timeout, "codex")
+    thread, tokens = None, None
+    for line in (p.stdout or "").splitlines():
+        try:
+            ev = json.loads(line)
+        except ValueError:
+            continue
+        if ev.get("type") == "thread.started":
+            thread = ev.get("thread_id")
+        elif ev.get("type") == "turn.completed":
+            u = ev.get("usage") or {}
+            tokens = (u.get("input_tokens") or 0) + (u.get("output_tokens") or 0)
+    if tokens is None:
+        m = re.search(r"tokens used\s*\n\s*([\d,]+)", (p.stdout or "") + (p.stderr or ""))
+        tokens = int(m.group(1).replace(",", "")) if m else None
+    usage = {"tool": "codex", "seconds": int((now() - started).total_seconds()), "tokens": tokens}
     try:
         text = bridge.read(out.name)
     finally:
         os.unlink(out.name)
     if p.returncode != 0 or not text.strip():
-        tail = "\n".join(log.strip().splitlines()[-8:])
+        if sid and _retry:
+            # The saved thread is gone or broken: start one fresh thread and keep it.
+            save_session("codex", None)
+            return call_codex(cfg, prompt, schema_file, write, timeout, _retry=False)
+        tail = "\n".join(((p.stderr or "") + (p.stdout or "")).strip().splitlines()[-8:])
         raise DuoError("Codex failed (exit %d):\n%s" % (p.returncode, tail))
+    if one_session(cfg) and thread and thread != sid:
+        save_session("codex", thread)
     return bridge.extract_json(text), usage
 
 
-def call_claude(cfg, prompt, schema_file, write=False, timeout=None):
+def call_claude(cfg, prompt, schema_file, write=False, timeout=None, _retry=True):
     exe = find_bin("claude", cfg)
-    cmd = [exe, "-p", "--output-format", "json", "--no-session-persistence",
+    cmd = [exe, "-p", "--output-format", "json",
            "--json-schema", json.dumps(load_schema(schema_file)),
            "--permission-mode", "dontAsk",
            "--allowedTools", ",".join(CLAUDE_WRITE_TOOLS if write else CLAUDE_READ_TOOLS),
            "--disallowedTools", ",".join(CLAUDE_DENIED)]
+    sid = load_sessions().get("claude") if one_session(cfg) else None
+    if not one_session(cfg):
+        cmd.append("--no-session-persistence")
+    elif sid:
+        cmd += ["--resume", sid]
+    else:
+        cmd += ["--session-id", str(uuid.uuid4())]
     model = cfg.get("duo", {}).get("claude_model", "")
     if model:
         cmd += ["--model", model]
     started = now()
-    try:
-        p = subprocess.run(cmd, input=prompt, capture_output=True, text=True, cwd=bridge.ROOT,
-                           env=clean_env(["ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN"]), timeout=timeout)
-    except subprocess.TimeoutExpired:
-        raise DuoError("Claude did not finish within %d minutes" % (timeout // 60))
+    p = _run(cmd, prompt, ["ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN"], timeout, "claude")
     try:
         data = json.loads(p.stdout)
     except json.JSONDecodeError:
+        if sid and _retry and "No conversation found" in (p.stderr or "") + (p.stdout or ""):
+            save_session("claude", None)
+            return call_claude(cfg, prompt, schema_file, write, timeout, _retry=False)
         tail = "\n".join(((p.stderr or "") + (p.stdout or "")).strip().splitlines()[-8:])
         raise DuoError("Claude failed (exit %d):\n%s" % (p.returncode, tail))
     usage = {"tool": "claude", "seconds": int((now() - started).total_seconds()),
@@ -169,6 +239,8 @@ def call_claude(cfg, prompt, schema_file, write=False, timeout=None):
              "api_equivalent_usd": data.get("total_cost_usd")}
     if data.get("is_error") or p.returncode != 0:
         raise DuoError("Claude reported an error: %s" % (data.get("result") or data.get("subtype")))
+    if one_session(cfg) and data.get("session_id"):
+        save_session("claude", data["session_id"])
     result = data.get("structured_output")
     if result is None:
         result = bridge.extract_json(data.get("result") or "")
@@ -262,13 +334,23 @@ def render(obj, indent=""):
     return lines
 
 
+def chat_say(speaker, to, step, text):
+    """Append one turn to the single live chat (.bridge-out/chat.md)."""
+    os.makedirs(os.path.dirname(LIVE_CHAT), exist_ok=True)
+    if not os.path.exists(LIVE_CHAT):
+        bridge.write(LIVE_CHAT, "# Almond chat\n\nYou, Claude and Codex in one conversation. "
+                     "Tasks, questions and answers all land here.\n")
+    with open(LIVE_CHAT, "a", encoding="utf-8") as f:
+        f.write("\n## %s · %s → %s: %s\n\n%s\n" % (now().strftime("%Y-%m-%d %H:%M"), speaker, to, step, text))
+
+
 def say(task_id, speaker, to, step, body, usage=None):
     path = transcript_path(task_id)
     os.makedirs(CONV, exist_ok=True)
     if not os.path.exists(path):
         bridge.write(path, "# %s — duo conversation\n\nClaude and Codex working on this task "
                      "through the Almond AI Bridge. Written by `ai-bridge/bridge duo`; one "
-                     "section per turn, newest last.\n" % task_id)
+                     "section per turn, newest last. The same turns appear in the live chat.\n" % task_id)
     head = "\n## %s · %s → %s: %s\n\n" % (now().strftime("%Y-%m-%d %H:%M"), speaker, to, step)
     text = "\n".join(render(body)) if isinstance(body, (dict, list)) else str(body)
     foot = ""
@@ -283,6 +365,9 @@ def say(task_id, speaker, to, step, body, usage=None):
         foot = "\n\n_%s_" % " · ".join(bits)
     with open(path, "a", encoding="utf-8") as f:
         f.write(head + text + foot + "\n")
+    # The chat page writes the owner's task itself; from a terminal, duo does.
+    if not (speaker == "Owner" and step == "task" and os.environ.get("ALMOND_CHAT_SERVER")):
+        chat_say(speaker, to, "%s · %s" % (task_id, step), text + foot)
     print("  %s → %s: %s" % (speaker, to, step))
 
 
@@ -341,6 +426,57 @@ def step_review(cfg, task, who, base, implementation, checks, plan_review=None):
 
 # -------------------------------------------------------------- command
 
+def load_state():
+    try:
+        with open(STATE, encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return {}
+
+
+def save_state(**kw):
+    data = load_state()
+    data.update(kw)
+    data = {k: v for k, v in data.items() if v is not None}
+    os.makedirs(os.path.dirname(STATE), exist_ok=True)
+    with open(STATE, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
+
+
+def task_branch_for(task_id):
+    """Find the local branch of a task (task/T-0011-...) if the task file is not here."""
+    out = bridge.git("branch", "--list", "task/%s-*" % task_id, "--format=%(refname:short)").stdout.split()
+    return out[0] if out else None
+
+
+def back_to(branch):
+    if branch and bridge.current_branch() != branch and not git_dirty():
+        bridge.git("checkout", "-q", branch)
+
+
+def open_pr(cfg, task, branch, base, report_rel):
+    """Push the task branch and open a PR against its base. Never merges."""
+    if not cfg.get("duo", {}).get("open_pr", True) or not shutil.which("gh"):
+        return None
+    if bridge.git("ls-remote", "--exit-code", "--heads", "origin", base).returncode != 0:
+        chat_say("Bridge", "Owner", "%s · PR" % task["id"],
+                 "Not opening a PR: the base branch `%s` is not on GitHub. Push it, then push `%s`." % (base, branch))
+        return None
+    if bridge.git("push", "-q", "-u", "origin", branch).returncode != 0:
+        chat_say("Bridge", "Owner", "%s · PR" % task["id"], "Could not push `%s`." % branch)
+        return None
+    body = ("**Made by duo mode** (Claude + Codex). Conversation: `ai-bridge/conversations/%s.md` · "
+            "report: `%s`.\nBase: `%s`. Nothing is merged: the owner reviews and merges.\n\n"
+            "🤖 Generated with [Claude Code](https://claude.com/claude-code) (duo mode: Claude + Codex)"
+            % (task["id"], report_rel, base))
+    p = bridge.run(["gh", "pr", "create", "--base", base, "--head", branch,
+                    "--title", "%s: %s" % (task["id"], task.get("title", "")), "--body", body])
+    url = (p.stdout or "").strip().splitlines()[-1] if p.returncode == 0 and p.stdout.strip() else None
+    if not url:
+        chat_say("Bridge", "Owner", "%s · PR" % task["id"], "Could not open a PR: %s" % (p.stderr or "").strip()[:300])
+    return url
+
+
 def git_dirty():
     # Untracked files count too: each round commits with `git add -A`.
     return bool(bridge.git("status", "--porcelain").stdout.strip())
@@ -356,6 +492,27 @@ def commit_all(message):
 
 
 def cmd_duo(args, cfg):
+    """Run a task; whatever happens, never leave the chat stuck on "working"."""
+    try:
+        return _cmd_duo(args, cfg)
+    except Exception as e:
+        msg = e.args[0] if isinstance(e, bridge.BridgeError) and e.args else "%s: %s" % (type(e).__name__, e)
+        st = load_state()
+        tid, base = st.get("running"), st.get("running_base")
+        saved = ""
+        if tid and base and bridge.current_branch().startswith("task/%s-" % tid):
+            # Keep the half-done work on the task branch and go back, so the next
+            # chat message is not refused because of a dirty working tree.
+            sha = commit_all("%s: duo stopped (%s)" % (tid, msg.splitlines()[0][:60]))
+            back_to(base)
+            saved = " The work so far is saved on its branch%s. Send `duo %s` as a task, or tell us what to " \
+                    "change, to try again." % (" (%s)" % sha if sha else "", tid)
+        chat_say("Bridge", "Owner", "error", "The run stopped: %s%s" % (msg, saved))
+        save_state(running=None, running_base=None)
+        raise
+
+
+def _cmd_duo(args, cfg):
     duo_cfg = cfg.get("duo", {})
     planner = args.planner or duo_cfg.get("planner", "claude")
     critic = duo_cfg.get("plan_reviewer", other(planner))
@@ -365,12 +522,21 @@ def cmd_duo(args, cfg):
         raise DuoError("the working tree has uncommitted or untracked files; commit, stash or "
                        "remove them first (each duo round commits everything with git add -A)")
     base_branch = bridge.current_branch()
-    if base_branch in (cfg["project"]["default_base"], "HEAD"):
+    is_id = bool(re.fullmatch(r"(?i)T-?\d{1,4}", args.task.strip()))
+    if is_id:
+        tid0 = bridge.normalise_id(args.task)
+        if not any(t.get("id") == tid0 for t in bridge.load_tasks()):
+            other_branch = task_branch_for(tid0)
+            if not other_branch:
+                raise DuoError("no task %s here and no branch task/%s-*" % (tid0, tid0))
+            bridge.git("checkout", "-q", other_branch, check=True)
+    if base_branch in (cfg["project"]["default_base"], "HEAD") and not is_id:
         raise DuoError("run duo from a feature branch (it stacks the task branch on top), not %s"
                        % base_branch)
 
-    if re.fullmatch(r"(?i)T-?\d{1,4}", args.task.strip()):
+    if is_id:
         task = bridge.find_task(args.task)
+        base_branch = task.get("base") or base_branch
     else:
         task_id, _ = bridge.create_task(args.task.strip()[:80], area=args.area,
                                         assignee="duo", goal=args.task.strip())
@@ -385,8 +551,14 @@ def cmd_duo(args, cfg):
         exists = bridge.git("rev-parse", "--verify", "--quiet", branch).returncode == 0
         bridge.git(*(["checkout", branch] if exists else ["checkout", "-b", branch]), check=True)
     task = bridge.find_task(tid)
-    task.update(status="in-progress", branch=branch, assignee="duo")
+    task.update(status="in-progress", branch=branch, assignee="duo", base=task.get("base") or base_branch)
+    base_branch = task["base"]
+    if getattr(args, "answer", None):
+        task["_body"] = task["_body"].rstrip("\n") + "\n\n## Owner answers (%s)\n\n%s\n" % (
+            now().strftime("%Y-%m-%d %H:%M"), args.answer.strip())
+        say(tid, "Owner", "Claude + Codex", "answers", args.answer.strip())
     bridge.save_task(task, "duo started on %s (base %s)" % (branch, base_branch))
+    save_state(running=tid, running_base=base_branch, paused=None)
     task = bridge.find_task(tid)
     say(tid, "Owner", "Claude + Codex", "task", task.get("title", ""))
     print("Duo on %s, branch %s (base %s). Transcript: %s" % (
@@ -407,10 +579,13 @@ def cmd_duo(args, cfg):
         bridge.save_task(task, "duo stopped before implementing: questions for the owner")
         say(tid, "Claude + Codex", "Owner", "questions before implementing", plan["questions_for_owner"])
         commit_all("%s: duo plan (waiting for the owner's answers)" % tid)
+        save_state(running=None, running_base=None, paused={"task": tid, "branch": branch, "base": base_branch,
+                                        "questions": plan["questions_for_owner"]})
+        back_to(base_branch)
         print("\nStopped: the plan has questions only you can answer:")
         for q in plan["questions_for_owner"]:
             print("  - %s" % q)
-        print("Answer them in the task file (or tell Claude), then run: ai-bridge/bridge duo %s" % tid)
+        print("Answer in the chat (ai-bridge/bridge view), or run: ai-bridge/bridge duo %s --answer \"...\"" % tid)
         return 3
 
     choice = args.implementer or duo_cfg.get("implementer", "plan")
@@ -461,12 +636,23 @@ def cmd_duo(args, cfg):
     task["status"] = "needs-owner"
     bridge.save_task(task, "duo finished: %d round(s), last verdict %s" % (rnd, review["verdict"]))
     bridge.refresh_docs(cfg)
-    say(tid, "Claude + Codex", "Owner", "done", "Last review: **%s**. Report: `%s`. Nothing was "
-        "pushed or merged; the branch `%s` waits for you." % (review["verdict"], bridge.rel(path), branch))
+    say(tid, "Claude + Codex", "Owner", "done", "Last review: **%s**. Report: `%s`. Branch `%s`. "
+        "Nothing is merged." % (review["verdict"], bridge.rel(path), branch))
     commit_all("%s: duo report and transcript" % tid)
+    url = open_pr(cfg, task, branch, base_branch, bridge.rel(path))
+    if url:
+        task = bridge.find_task(tid)
+        task["pr"] = url.rstrip("/").rsplit("/", 1)[-1]
+        bridge.save_task(task, "PR opened: %s" % url)
+        commit_all("%s: record PR" % tid)
+        bridge.git("push", "-q")
+        chat_say("Claude + Codex", "Owner", "%s · pull request" % tid,
+                 "Opened %s (base `%s`). It is yours to review and merge." % (url, base_branch))
+    save_state(running=None, running_base=None, paused=None)
+    back_to(base_branch)
     print("\nDone: %s after %d round(s), last review %s." % (tid, rnd, review["verdict"]))
     print("Read: %s and %s" % (bridge.rel(transcript_path(tid)), bridge.rel(path)))
-    print("Nothing was pushed. Next: push %s and open a PR, or ask Claude to." % branch)
+    print(("PR: %s" % url) if url else "No PR opened. Push %s and open one, or ask Claude to." % branch)
     return 0
 
 
@@ -494,8 +680,72 @@ def cmd_ask(args, cfg):
         f.write("\n## %s · %s → %s\n\n**Q:** %s\n\n**A** (confidence %s): %s\n\nSources: %s\n" % (
             now().strftime("%H:%M"), asker, NAMES[who], question, result["confidence"],
             result["answer"], ", ".join(result["sources"]) or "none"))
+    chat_say(NAMES[who], asker, "answer (confidence %s)" % result["confidence"],
+             result["answer"] + ("\n\n_Sources: %s_" % ", ".join(result["sources"]) if result["sources"] else ""))
     print("%s (confidence %s):\n%s" % (NAMES[who], result["confidence"], result["answer"]))
     if result["sources"]:
         print("Sources: %s" % ", ".join(result["sources"]))
     print("(saved to %s)" % bridge.rel(path))
+    return 0
+
+
+def cmd_discuss(args, cfg):
+    """A question for both: Claude answers, then Codex confirms or corrects, in the live chat."""
+    question = " ".join(args.question).strip()
+    if not question:
+        raise DuoError("discuss needs a question")
+    first = args.first or "claude"
+    second = other(first)
+    if not args.no_echo:
+        chat_say("Owner", "Claude + Codex", "question", question)
+    save_state(running="question")
+    try:
+        files = ", ".join(context_list())
+        prompt = "\n".join([
+            "You are %s, in one chat with the owner (Alex) and %s about Almond Linux." % (NAMES[first], NAMES[second]),
+            "Read what you need (start with %s). Do not edit anything. Answer plainly and briefly; "
+            "list the files or commands your answer rests on. Answer with ONE JSON object." % files,
+            "", "Owner's question: %s" % question])
+        a, u1 = call(first, cfg, prompt, "answer-schema.json")
+        chat_say(NAMES[first], "Owner", "answer (confidence %s)" % a["confidence"],
+                 a["answer"] + ("\n\n_Sources: %s_" % ", ".join(a["sources"]) if a["sources"] else ""))
+        prompt2 = "\n".join([
+            "You are %s, in one chat with the owner (Alex) and %s about Almond Linux." % (NAMES[second], NAMES[first]),
+            "The owner asked a question and %s answered. Check the answer against the repository "
+            "(start with %s). Do not edit anything. If it is right, say so in one sentence; if not, "
+            "correct it. Answer with ONE JSON object." % (NAMES[first], files),
+            "", "Owner's question: %s" % question, "", "%s's answer:" % NAMES[first], fence(a)])
+        b, u2 = call(second, cfg, prompt2, "second-opinion-schema.json")
+        chat_say(NAMES[second], "Owner", "%s (confidence %s)" % ("agrees" if b["agrees"] else "disagrees", b["confidence"]),
+                 b["answer"] + ("\n\n_Sources: %s_" % ", ".join(b["sources"]) if b["sources"] else ""))
+    except Exception as e:
+        msg = e.args[0] if isinstance(e, bridge.BridgeError) and e.args else str(e)
+        chat_say("Bridge", "Owner", "error", "The question could not be answered: %s" % msg)
+        raise
+    finally:
+        save_state(running=None)
+    print("%s: %s\n%s (%s): %s" % (NAMES[first], a["answer"], NAMES[second],
+                                   "agrees" if b["agrees"] else "disagrees", b["answer"]))
+    return 0
+
+
+def cmd_chat(args, cfg):
+    """Status of the one chat; --new starts fresh AI sessions (the chat log stays)."""
+    if args.new:
+        for who in ("claude", "codex"):
+            save_session(who, None)
+        chat_say("Bridge", "Claude + Codex", "new sessions",
+                 "The owner started fresh sessions. Earlier turns stay in this log, but you no longer remember them.")
+        print("Fresh sessions next time; the chat log is kept (%s)." % bridge.rel(LIVE_CHAT))
+        return 0
+    st, ses = load_state(), load_sessions()
+    print("Live chat: %s" % bridge.rel(LIVE_CHAT))
+    print("Sessions: Claude %s · Codex %s" % (ses.get("claude", "new"), ses.get("codex", "new")))
+    if st.get("running"):
+        print("Working on: %s" % st["running"])
+    if st.get("paused"):
+        print("Waiting for your answer on %s:" % st["paused"]["task"])
+        for q in st["paused"].get("questions", []):
+            print("  - %s" % q)
+    print("Open the chat: ai-bridge/bridge view --open")
     return 0

@@ -60,7 +60,7 @@ OPEN_STATUSES = ["ready", "in-progress", "review", "changes-requested",
                  "needs-owner", "approved", "blocked"]
 TASK_KEYS = ["id", "title", "status", "priority", "area", "assignee",
              "created", "updated", "branch", "pr", "review_round",
-             "max_review_rounds", "approval", "proposed_by"]
+             "max_review_rounds", "approval", "proposed_by", "base"]
 REQUIRED_TASK_KEYS = ["id", "title", "status", "priority", "created"]
 TASK_ID_RE = re.compile(r"\bT-(\d{4})\b")
 REVIEW_MARKER = "<!-- almond-ai-review"
@@ -1495,6 +1495,13 @@ def main(argv=None):
     s.add_argument("--area", default="general", help="area for a new task")
     s.add_argument("--ignore-questions", action="store_true",
                    help="implement even if the plan has questions for the owner")
+    s.add_argument("--answer", help="your answers to the plan's questions (resumes the task)")
+    s = sub.add_parser("discuss", help="question for both: Claude answers, Codex checks the answer")
+    s.add_argument("question", nargs="+")
+    s.add_argument("--first", choices=["claude", "codex"], help="who answers first (default Claude)")
+    s.add_argument("--no-echo", action="store_true", help=argparse.SUPPRESS)
+    s = sub.add_parser("chat", help="status of the one Almond chat; --new for fresh AI sessions")
+    s.add_argument("--new", action="store_true")
     s = sub.add_parser("view", help="live web view of Claude <-> Codex conversations")
     s.add_argument("--port", type=int, default=4820)
     s.add_argument("--open", action="store_true", help="open it in the default browser")
@@ -1508,7 +1515,8 @@ def main(argv=None):
                 "check": cmd_check, "finish": cmd_finish, "out": cmd_out, "in": cmd_in,
                 "review": cmd_review, "ci-review": cmd_ci_review, "handoff": cmd_handoff,
                 "dashboard": cmd_dashboard, "ready": cmd_ready, "approve": cmd_approve,
-                "view": cmd_view, "duo": lambda a, c: _duo().cmd_duo(a, c), "ask": lambda a, c: _duo().cmd_ask(a, c)}
+                "view": cmd_view, "duo": lambda a, c: _duo().cmd_duo(a, c), "ask": lambda a, c: _duo().cmd_ask(a, c),
+                "discuss": lambda a, c: _duo().cmd_discuss(a, c), "chat": lambda a, c: _duo().cmd_chat(a, c)}
     if args.cmd is None:
         args.all = False
     try:

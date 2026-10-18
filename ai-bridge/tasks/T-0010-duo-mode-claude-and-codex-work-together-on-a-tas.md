@@ -35,6 +35,7 @@ The owner gives one task; Claude and Codex work on it together, each doing what 
 - [x] Tests with fake CLIs; end-to-end run with fakes
 - [x] One real duo run with the real Claude and Codex (T-0011, PR #7)
 - [x] Live viewer (`ai-bridge/bridge view`)
+- [x] One chat (owner request 2026-10-18): single live log, one persistent session per AI, tasks/questions/answers typed in the page, answers resume a paused task, PR opened automatically, failed runs leave a clean tree
 
 ## Tests to run
 

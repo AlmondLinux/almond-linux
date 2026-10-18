@@ -3,6 +3,7 @@
 # Claude or Codex. The full duo flow is exercised in a scratch clone by the
 # end-to-end check described in ai-bridge/docs/TESTING.md.
 import io
+import json
 import os
 import sys
 import tempfile
@@ -64,14 +65,21 @@ class Basics(unittest.TestCase):
 
 class FakeCalls(unittest.TestCase):
     def setUp(self):
-        self.env = mock.patch.dict(os.environ, {
+        tmp = tempfile.mkdtemp()
+        self.patches = [mock.patch.dict(os.environ, {
             "ALMOND_DUO_CODEX": os.path.join(FAKES, "fake_codex"),
-            "ALMOND_DUO_CLAUDE": os.path.join(FAKES, "fake_claude")})
-        self.env.start()
+            "ALMOND_DUO_CLAUDE": os.path.join(FAKES, "fake_claude")}),
+            # Never touch the real chat, sessions or state.
+            mock.patch.object(duo, "SESSIONS", os.path.join(tmp, "sessions.json")),
+            mock.patch.object(duo, "LIVE_CHAT", os.path.join(tmp, "chat.md")),
+            mock.patch.object(duo, "STATE", os.path.join(tmp, "state.json"))]
+        for p in self.patches:
+            p.start()
         self.cfg = bridge.load_config()
 
     def tearDown(self):
-        self.env.stop()
+        for p in self.patches:
+            p.stop()
 
     def test_codex_answer_parsed_and_validated(self):
         result, usage = duo.call("codex", self.cfg, "a question", "answer-schema.json")
@@ -96,29 +104,88 @@ class FakeCalls(unittest.TestCase):
         self.assertIn("fake answer from codex", out.getvalue())
         logs = os.listdir(tmp)
         self.assertEqual(len(logs), 1)
-        self.assertIn("Claude → Codex", open(os.path.join(tmp, logs[0])).read())
+        self.assertIn("Claude → Codex", bridge.read(os.path.join(tmp, logs[0])))
 
 
 if __name__ == "__main__":
     unittest.main()
 
 
-class Viewer(unittest.TestCase):
+class Sessions(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.patches = [mock.patch.object(duo, "SESSIONS", os.path.join(self.tmp, "sessions.json")),
+                        mock.patch.object(duo, "LIVE_CHAT", os.path.join(self.tmp, "chat.md")),
+                        mock.patch.object(duo, "STATE", os.path.join(self.tmp, "state.json")),
+                        mock.patch.dict(os.environ, {
+                            "ALMOND_DUO_CODEX": os.path.join(FAKES, "fake_codex"),
+                            "ALMOND_DUO_CLAUDE": os.path.join(FAKES, "fake_claude"),
+                            "FAKE_AI_STATE": self.tmp})]
+        for p in self.patches:
+            p.start()
+        self.cfg = bridge.load_config()
+
+    def tearDown(self):
+        for p in self.patches:
+            p.stop()
+
+    def test_one_session_per_ai_is_reused(self):
+        for _ in range(3):
+            duo.call("codex", self.cfg, "q", "answer-schema.json")
+            duo.call("claude", self.cfg, "q", "answer-schema.json")
+        ses = duo.load_sessions()
+        self.assertEqual(ses["codex"], "fake-codex-thread")
+        self.assertTrue(ses["claude"])
+        log = bridge.read(os.path.join(self.tmp, "sessions.log")).split("\n")
+        codex = [l.split()[1] for l in log if l.startswith("codex")]
+        claude = [l.split()[1] for l in log if l.startswith("claude")]
+        self.assertEqual(codex, ["new", "fake-codex-thread", "fake-codex-thread"])
+        self.assertEqual(claude[0], "new")
+        self.assertEqual(claude[1], claude[2])
+        self.assertEqual(claude[1], ses["claude"])
+
+    def test_chat_new_forgets_sessions(self):
+        duo.save_session("codex", "x")
+        duo.save_session("claude", "y")
+        with mock.patch("sys.stdout", io.StringIO()):
+            duo.cmd_chat(mock.Mock(new=True), self.cfg)
+        self.assertEqual(duo.load_sessions(), {})
+        self.assertIn("fresh sessions", bridge.read(duo.LIVE_CHAT))
+
+    def test_discuss_both_answer_in_one_chat(self):
+        with mock.patch("sys.stdout", io.StringIO()):
+            duo.cmd_discuss(mock.Mock(question=["is", "it", "ok?"], first=None, no_echo=False), self.cfg)
+        chat = bridge.read(duo.LIVE_CHAT)
+        self.assertIn("Owner → Claude + Codex: question", chat)
+        self.assertIn("Claude → Owner: answer", chat)
+        self.assertIn("Codex → Owner: agrees", chat)
+        self.assertNotIn("running", duo.load_state())
+
+
+class ChatServer(unittest.TestCase):
     def setUp(self):
         import importlib
         self.view = importlib.import_module("view")
+        self.tmp = tempfile.mkdtemp()
+        self.patches = [mock.patch.object(duo, "LIVE_CHAT", os.path.join(self.tmp, "chat.md")),
+                        mock.patch.object(duo, "STATE", os.path.join(self.tmp, "state.json"))]
+        for p in self.patches:
+            p.start()
+
+    def tearDown(self):
+        for p in self.patches:
+            p.stop()
 
     def test_render_turns_and_speakers(self):
-        text = ("# T-0001 — duo conversation\n\nintro\n\n"
-                "## 2026-10-18 15:10 · Claude → Codex: plan\n\n- **summary:** s\n  - nested\n\n_3s · 2 turns_\n"
+        text = ("# Almond chat\n\nintro\n\n"
+                "## 2026-10-18 15:10 · Claude → Codex: T-0001 · plan\n\n- **summary:** s\n  - nested\n\n_3s · 2 turns_\n"
                 "## 2026-10-18 15:11 · Codex → Claude: review round 1 (approve)\n\n| a | b |\n|---|---|\n| 1 | 2 |\n"
-                "## 2026-10-18 15:12 · Claude + Codex → Owner: done\n\nok\n")
+                "## 2026-10-18 15:12 · Owner → Claude + Codex: task\n\nok\n")
         r = self.view.render(text)
         self.assertEqual(r["count"], 3)
-        self.assertEqual(r["title"], "T-0001 — duo conversation")
         self.assertIn('class="msg claude"', r["turns"])
         self.assertIn('class="msg codex"', r["turns"])
-        self.assertIn('class="msg claude-codex"', r["turns"])
+        self.assertIn('class="msg owner"', r["turns"])
         self.assertIn("<table>", r["turns"])
         self.assertIn('<div class="foot">3s · 2 turns</div>', r["turns"])
         self.assertIn("<ul><li><b>summary:</b> s</li><ul><li>nested</li></ul></ul>", r["turns"])
@@ -127,27 +194,63 @@ class Viewer(unittest.TestCase):
         r = self.view.render("## 2026-10-18 15:10 · Codex → Claude: x\n\n<script>alert(1)</script>\n")
         self.assertNotIn("<script>", r["turns"])
 
-    def test_only_serves_conversation_files(self):
-        import http.client, threading
+    def serve(self):
+        import threading
         from http.server import ThreadingHTTPServer
-        tmp = tempfile.mkdtemp()
-        with open(os.path.join(tmp, "T-0001.md"), "w") as f:
-            f.write("# T\n\n## 2026-10-18 15:10 · Claude → Codex: plan\n\nhi\n")
-        self.view.Handler.conv_dir = tmp
         server = ThreadingHTTPServer(("127.0.0.1", 0), self.view.Handler)
+        self.view.Handler.port = server.server_address[1]
+        self.view.Handler.token = "secret-token"
         threading.Thread(target=server.serve_forever, daemon=True).start()
-        try:
-            def get(path):
-                c = http.client.HTTPConnection("127.0.0.1", server.server_address[1], timeout=5)
-                c.request("GET", path)
-                r = c.getresponse()
-                return r.status, r.read().decode()
-            self.assertEqual(get("/")[0], 200)
-            status, body = get("/api/list")
-            self.assertIn("T-0001.md", body)
-            self.assertEqual(get("/api/conv?name=T-0001.md")[0], 200)
-            self.assertEqual(get("/api/conv?name=../../bridge.toml")[0], 404)
-            self.assertEqual(get("/api/conv?name=%2E%2E%2Fsecret.md")[0], 404)
-        finally:
-            server.shutdown()
-            server.server_close()
+        self.addCleanup(server.server_close)
+        self.addCleanup(server.shutdown)
+        return server.server_address[1]
+
+    def request(self, port, method, path, body=None, headers=None, host=None):
+        import http.client
+        c = http.client.HTTPConnection("127.0.0.1", port, timeout=5)
+        h = {"Host": host or "127.0.0.1:%d" % port}
+        h.update(headers or {})
+        c.request(method, path, body=body, headers=h)
+        r = c.getresponse()
+        return r.status, r.read().decode()
+
+    def test_security_token_and_host(self):
+        submitted = []
+        fake_chat = mock.Mock(busy=False, q=mock.Mock(empty=lambda: True, qsize=lambda: 0),
+                              submit=lambda t, m: (submitted.append((t, m)) or ("task", 1)))
+        with mock.patch.object(self.view, "CHAT", fake_chat):
+            port = self.serve()
+            status, page = self.request(port, "GET", "/")
+            self.assertEqual(status, 200)
+            self.assertIn("secret-token", page)
+            # DNS-rebinding style request with a foreign Host header
+            self.assertEqual(self.request(port, "GET", "/", host="evil.example:%d" % port)[0], 403)
+            body = json.dumps({"text": "do it", "mode": "task"})
+            # no token / wrong token / foreign host -> refused, nothing submitted
+            self.assertEqual(self.request(port, "POST", "/api/send", body)[0], 403)
+            self.assertEqual(self.request(port, "POST", "/api/send", body, {"X-Almond-Token": "nope"})[0], 403)
+            self.assertEqual(self.request(port, "POST", "/api/send", body, {"X-Almond-Token": "secret-token"},
+                                          host="evil.example")[0], 403)
+            self.assertEqual(submitted, [])
+            status, _ = self.request(port, "POST", "/api/send", body, {"X-Almond-Token": "secret-token"})
+            self.assertEqual(status, 200)
+            self.assertEqual(submitted, [("do it", "task")])
+            too_long = json.dumps({"text": "x" * 5000, "mode": "task"})
+            self.assertEqual(self.request(port, "POST", "/api/send", too_long, {"X-Almond-Token": "secret-token"})[0], 400)
+            self.assertEqual(self.request(port, "GET", "/api/state")[0], 200)
+
+    def test_answer_goes_to_paused_task(self):
+        duo.save_state(paused={"task": "T-0042", "branch": "task/T-0042-x", "base": "b", "questions": ["q?"]})
+        chat = self.view.Chat.__new__(self.view.Chat)
+        chat.q = __import__("queue").Queue()
+        chat.busy = False
+        kind, _ = chat.submit("use the short wording", "task")
+        self.assertEqual(kind, "answer")
+        self.assertEqual(chat.q.get()[0:2], ("answer", "use the short wording"))
+        kind, _ = chat.submit("what is AALDM?", "question")
+        self.assertEqual(kind, "question")
+        self.assertIn("what is AALDM?", bridge.read(duo.LIVE_CHAT))
+
+
+if __name__ == "__main__":
+    unittest.main()
