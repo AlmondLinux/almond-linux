@@ -1,13 +1,13 @@
 ---
 id: T-0007
 title: Install Almond Linux option with Calamares
-status: ready
+status: review
 priority: medium
 area: installer
 assignee: claude
 created: 2026-10-18
 updated: 2026-10-18
-branch: 
+branch: task/T-0007-install-almond-linux-option-with
 pr: 
 review_round: 0
 max_review_rounds: 2
@@ -27,11 +27,11 @@ The live desktop offers a clear "Install Almond Linux" option, using the Calamar
 
 ## Acceptance criteria
 
-- [ ] Research written down: which Debian 13 packages (`calamares`, `calamares-settings-debian`), their size, what they configure, and what must be Almond-specific (branding, no Debian logos presented as Almond)
-- [ ] Almond Calamares settings and branding (owner's logo used unaltered, Almond colours), with the live user, autologin and passwordless sudo removed from the installed system
-- [ ] An "Install Almond Linux" entry on the live desktop and in the launcher, only in the live session
-- [ ] Packages added to `config/package-lists/aaldm.list.chroot` (sensitive path: owner approves)
-- [ ] Test plan for disposable VirtualBox disks: BIOS and UEFI installs, first boot of the installed system, user and password, no live user left, updates work
+- [x] Research written down: which Debian 13 packages (`calamares`, `calamares-settings-debian`), their size, what they configure, and what must be Almond-specific (branding, no Debian logos presented as Almond)
+- [x] Almond Calamares settings and branding (owner's logo used unaltered, Almond colours), with the live user, autologin and passwordless sudo removed from the installed system
+- [x] An "Install Almond Linux" entry on the live desktop and in the launcher, only in the live session
+- [x] Packages added to `config/package-lists/aaldm.list.chroot` (sensitive path: owner approves)
+- [x] Test plan for disposable VirtualBox disks: BIOS and UEFI installs, first boot of the installed system, user and password, no live user left, updates work
 
 ## Tests to run
 
@@ -45,3 +45,5 @@ The live desktop offers a clear "Install Almond Linux" option, using the Calamar
 
 ## Log
 - 2026-10-18 15:00 — created at the owner's request (Claude, Mac)
+- 2026-10-18 14:48 — started on branch task/T-0007-install-almond-linux-option-with
+- 2026-10-18 14:51 — implementation report 1 written (all checks passed)

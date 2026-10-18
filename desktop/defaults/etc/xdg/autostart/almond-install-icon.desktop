@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Almond installer desktop icon
+Comment=Puts "Install Almond Linux" on the live desktop
+Exec=/usr/libexec/almond/almond-install-icon
+NoDisplay=true
+OnlyShowIn=LXQt;

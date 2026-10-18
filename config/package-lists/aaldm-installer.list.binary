@@ -1,0 +1,18 @@
+# Almond Linux AALDM: packages put into a small package pool on the ISO (not
+# installed in the live system). The installer installs the bootloader into
+# the new system from this pool (calamares-settings-debian's sources-media and
+# bootloader-config steps use the live medium as an apt source), so an
+# install works without a network. Task T-0007; owner approval needed.
+# Status: untested. Whether live-build's pool layout matches what
+# sources-media expects ("deb file:/run/live/medium trixie main") must be
+# checked in the first install test.
+#if ARCHITECTURE amd64
+grub-pc
+grub-efi
+grub-efi-amd64
+grub-efi-amd64-signed
+shim-signed
+#endif
+cryptsetup
+cryptsetup-initramfs
+keyutils

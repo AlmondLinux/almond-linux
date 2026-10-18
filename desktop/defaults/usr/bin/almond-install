@@ -1,0 +1,51 @@
+#!/bin/sh
+# almond-install: start the Calamares installer from the Almond live system.
+#
+# Runs Calamares as root through pkexec (Calamares ships the polkit rule; the
+# live user is allowed by live-config). Refuses to run outside the live
+# session. The installer itself asks before it changes any disk.
+#
+# Based on calamares-install-debian (calamares-settings-debian 13.0.13-1).
+# Part of Almond Linux. MIT License; see LICENSE and NOTICE.
+# Status: Implemented (source exists, untested at runtime).
+
+set -u
+
+say() {
+    printf 'almond-install: %s\n' "$*" >&2
+    if command -v notify-send >/dev/null 2>&1; then
+        notify-send -i almond "Install Almond Linux" "$*" 2>/dev/null || true
+    fi
+}
+
+if [ ! -d /run/live/medium ]; then
+    say "This only works from the Almond live system (USB stick or DVD)."
+    exit 1
+fi
+if ! command -v calamares >/dev/null 2>&1; then
+    say "The installer (Calamares) is not part of this image."
+    exit 1
+fi
+
+# live-build leaves an /etc/fstab in the live system that confuses Calamares'
+# partitioning; Debian's wrapper moves it aside for the same reason.
+moved=0
+if [ -f /etc/fstab ] && sudo -n mv /etc/fstab /etc/fstab.orig.calamares 2>/dev/null; then
+    moved=1
+fi
+
+# Let root draw on this X display while the installer runs.
+if command -v xhost >/dev/null 2>&1; then
+    xhost +si:localuser:root >/dev/null 2>&1 || true
+fi
+
+pkexec calamares
+status=$?
+
+if command -v xhost >/dev/null 2>&1; then
+    xhost -si:localuser:root >/dev/null 2>&1 || true
+fi
+if [ "$moved" -eq 1 ]; then
+    sudo -n mv /etc/fstab.orig.calamares /etc/fstab 2>/dev/null || true
+fi
+exit "$status"

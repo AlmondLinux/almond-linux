@@ -1,0 +1,16 @@
+[Desktop Entry]
+Type=Application
+Version=1.5
+Name=Install Almond Linux
+GenericName=Installer
+Comment=Install Almond Linux on this computer. Nothing changes until you confirm the disk.
+Exec=almond-install
+TryExec=calamares
+Icon=almond
+Terminal=false
+StartupNotify=true
+Categories=System;
+Keywords=install;installer;calamares;setup;disk;
+# Live session only: the installer removes this file from the installed
+# system (shellprocess-almondcleanup.conf), and TryExec hides it when
+# Calamares is missing.
