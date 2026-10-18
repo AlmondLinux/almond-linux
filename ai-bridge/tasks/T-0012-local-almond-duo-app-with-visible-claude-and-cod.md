@@ -1,7 +1,7 @@
 ---
 id: T-0012
 title: Local Almond Duo app with visible Claude and Codex collaboration
-status: in-progress
+status: review
 priority: medium
 area: general
 assignee: claude
@@ -30,7 +30,7 @@ Give the owner one local Mac app to prompt Claude and Codex together and read th
 - [x] Ask both concurrently and exchange second responses.
 - [x] Build together uses the tested plan, review, implement and check workflow.
 - [x] Save history, export transcripts, isolate runs and stop work.
-- [ ] Verify the packaged native app with real agents.
+- [x] Verify the packaged native app with real agents.
 
 ## Tests to run
 

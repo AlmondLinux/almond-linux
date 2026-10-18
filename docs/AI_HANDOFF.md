@@ -85,3 +85,8 @@ Add a dated entry when you stop work that someone else will continue. Newest fir
 
 - **2026-10-18 — Claude (Mac):** Recorded the PC's 2026-10-17 build and VM boot results in `tests/results/2026-10-17-vm/` and updated PROJECT_STATUS.md (several components now TESTED (VM)). Added the owner's component definitions from their design notes. Opened backlog tasks T-0003–T-0005 for the bugs found. Waiting for the owner on T-0002.
 - **2026-10-17 — Claude (Mac):** Set up the Almond AI Bridge (phase 1 files, local CLI, free PR checks workflow, optional OpenAI review workflow switched off, dashboard). Created PROJECT_STATUS.md, DESIGN_RULES.md, this file, CLAUDE.md and AGENTS.md. No OS code changed. Next: owner reviews and merges the bridge PR; then T-0001 on the PC.
+
+
+### 2026-10-18 — Almond Duo app
+
+Local Almond Duo macOS app added for the owner: concurrent Ask both, automatic Build together, visible messages, local history and export. Real Ask both and native export tested; app build-cycle wiring tested with fake agents. See ai-bridge/app/README.md and ai-bridge/reports/T-0012-impl-1.md. No ISO status changed.
