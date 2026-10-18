@@ -19,7 +19,7 @@
 
 Almond Linux is an independent Linux distribution project focused on simplicity, stability, performance, and freedom. The initial operating system will be based on Debian. The long-term goal is for Almond to become a fully independent distribution of its own.
 
-> **Status: early development.** No ISO has been built, booted or released. Nothing in this repository is ready to install. See [Project status](#project-status).
+> **Status: early development.** A first AALDM ISO was built and booted in a virtual machine on 17 October 2026 ([results](tests/results/2026-10-17-vm/RESULTS.md)). Nothing has been released and nothing is ready to install. See [Project status](#project-status) and [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md).
 
 ## Names
 
@@ -33,18 +33,18 @@ Release codenames are Spanish almond varieties: **0.1 "Marcona"**, **0.2 "Largue
 
 ## Project status
 
-As of 14 October 2026. Status words: **Planned** · **Implemented (source exists, untested)** · **Tested** · **Released**.
+As of 18 October 2026. Status words: **Planned** · **Implemented (source exists, untested)** · **Tested** · **Released**. The detailed, per-component status is in [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md).
 
 | Area | Status |
 |---|---|
-| AALDM build configuration (live-build, amd64 hybrid BIOS+UEFI ISO; arm64 dev variant) | Implemented (source exists, untested). Checked: shell syntax, that the build script refuses to run outside a Debian 13 build machine, and that every package name exists in Debian 13 |
-| ISO image | Planned (not built yet) |
-| Boot, networking, security defaults | Implemented (source exists, untested): nothing has been booted yet |
-| Almond Pure desktop: Almond Frame (Openbox themes, Qt palettes, LXQt themes), icons and folder colours, Almond Launcher, desktop defaults (LXQt, Openbox, PCManFM-Qt, GTK, global shortcuts) | Implemented (source exists, untested): staged into the image by the build; none of it has run |
-| Branding: logo, boot menu artwork, wallpapers, image identity | Implemented (source exists, untested) |
-| Memory measurement (`tests/measure-memory.sh`, also copied into the image) | Implemented (source exists, untested on Linux) |
+| AALDM build configuration (live-build, amd64 hybrid BIOS+UEFI ISO; arm64 dev variant) | Tested in a VM: built successfully on 17 October 2026 (commit 6401433) |
+| ISO image | Tested in a VM: boots to the desktop in BIOS and UEFI mode in VirtualBox ([results](tests/results/2026-10-17-vm/RESULTS.md)). Not tried on real hardware. Not released |
+| Boot, networking, security defaults | Boot: tested in a VM. Networking: connected in the VM, web page not tested. Security defaults: not tested |
+| Almond Pure desktop: Almond Frame (Openbox themes, Qt palettes, LXQt themes), icons and folder colours, Almond Launcher, desktop defaults (LXQt, Openbox, PCManFM-Qt, GTK, global shortcuts) | Runs in the VM (LXQt + Openbox desktop, launcher opens with Super); launcher bugs found; themes and file manager not checked yet |
+| Branding: logo, boot menu artwork, wallpapers, image identity | Boot menus and system identity seen in the VM; the UEFI menu title overlaps the logo |
+| Memory measurement (`tests/measure-memory.sh`, also copied into the image) | Tested in a VM. First single-boot results: 413 MiB used at 2 GB RAM, above the 300 MB target |
 | AALDM phases 1–10 ([plan, section 14](docs/AALDM-PLAN.md#14-phases-mapped-to-the-roadmap)) | No phase is complete |
-| Anything Tested | Nothing yet |
+| Real hardware | Nothing tested yet |
 | Installer | Planned |
 | Editions | AALDM first (provisional desktop: LXQt + Openbox on X11). AALLDM: desktop still undecided |
 | Website | [almondlinux.github.io](https://almondlinux.github.io) |
@@ -53,7 +53,7 @@ As of 14 October 2026. Status words: **Planned** · **Implemented (source exists
 
 | Version | Goal | Status |
 |---|---|---|
-| 0.1 "Marcona" | First bootable AALDM ISO for 64-bit PCs (amd64) | Implemented (source exists, untested) |
+| 0.1 "Marcona" | First bootable AALDM ISO for 64-bit PCs (amd64) | In progress: first ISO built and booted in a VM; evidence still incomplete |
 | 0.2 "Largueta" | Custom Almond branding, wallpaper, themes, and system identity | Planned (its assets: Implemented (source exists, untested)) |
 | 0.3 "Valencia" | Customized desktop experience | Planned |
 | 0.5 | Graphical installer and testing | Planned |
@@ -69,7 +69,7 @@ A milestone is only marked done when its evidence exists (ISO hash, build log, b
 - **First real test PC:** a Dell OptiPlex 390 (2011, 64-bit Intel, integrated graphics), a second-hand PC: booted from USB only, and its internal disk is never mounted or read.
 - **ARM64** is only a development variant (VMs on Apple Silicon Macs), not a target.
 - **AALLDM** (the large edition): desktop still undecided.
-- **Almond Pure** (the visual design): icons, folder colours, Openbox themes, launcher and boot artwork are Implemented (source exists, untested): they exist as source files and the build stages them into the image, but none of it has run yet.
+- **Almond Pure** (the visual design): icons, folder colours, Openbox themes, launcher and boot artwork were staged into the first ISO and ran in a VirtualBox test on 17 October 2026; they have not been checked against the mockups or tried on real hardware.
 - **Testing:** virtual machines first (VirtualBox, QEMU/KVM, UTM), then the OptiPlex 390.
 - **Not a goal:** native installation on Apple Silicon Macs.
 

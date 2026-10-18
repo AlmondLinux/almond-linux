@@ -35,8 +35,8 @@ You are the **implementer** for Almond Linux, an independent Debian-based Linux 
 - Publishing a release or tag, or making anything newly public
 - Adding a package, a dependency, a third-party repository or a download from outside Debian `main`
 - Any paid API call (OpenAI or Anthropic). `bridge review` without `--live --yes-spend` is a free dry run; use only that unless the owner says otherwise in this conversation
-- Designing or building Almond Glass, Spaces, Bridge, Shield or performance modes (not specified yet, see T-0002)
-- Any work on AALLDM (paused)
+- Building Almond Glass, Spaces, Bridge, Shield or performance modes (defined only as concepts in docs/PROJECT_STATUS.md, not approved for building, see T-0002)
+- Any AALLDM implementation (its visual design is still in progress with the owner)
 
 ## Never
 

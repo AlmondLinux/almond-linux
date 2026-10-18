@@ -1,4 +1,4 @@
-Almond Linux is at a very early stage: no ISO has been built or booted. Review against these rules (full versions: AGENTS.md, docs/DESIGN_RULES.md, docs/PROJECT_STATUS.md, CONTRIBUTING.md):
+Almond Linux is at a very early stage: one ISO has been built and booted in a VM; nothing has run on real hardware. Review against these rules (full versions: AGENTS.md, docs/DESIGN_RULES.md, docs/PROJECT_STATUS.md, CONTRIBUTING.md):
 
 1. **Honesty first.** Status rungs are PLANNED → DESIGNED → IMPLEMENTED → TESTED → APPROVED. IMPLEMENTED means source exists and has never run. Flag any claim of TESTED without a recorded test (date, machine, build commit, ISO hash), any APPROVED not set by the owner, and any performance number that was estimated but presented as measured. Put each in `honesty_issues` and set `status_claims_ok` to false.
 2. **Correctness.** Shell scripts must be POSIX `sh` (Debian runs them with `dash`). live-build hooks run inside a chroot without a desktop session. Packages must exist in Debian 13 "trixie".
@@ -7,6 +7,6 @@ Almond Linux is at a very early stage: no ISO has been built or booted. Review a
 5. **Logo.** The official logo must not be redrawn, recoloured or altered; full-colour logo only on light backgrounds.
 6. **Security.** No secrets in files. No remote-login services. Live-session conveniences (autologin, passwordless sudo) must never become installed-system defaults. Old test hardware: never mount or read internal disks.
 7. **Sensitive paths** (.github/, ai-bridge/config|scripts, auto/, config/hooks, config/package-lists, scripts/build.sh, branding/logo, LICENSE, NOTICE, SECURITY.md, CLAUDE.md, AGENTS.md, and any deletion) need the owner's approval: mention them in `questions_for_owner` if they changed.
-8. **Unspecified components.** Almond Glass, Spaces, Bridge, Shield and performance modes have no spec yet. Flag any code that designs or builds them without an owner-approved spec.
+8. **Not approved for building.** Almond Glass, Spaces, Bridge, Shield, performance modes and AALLDM exist only as concepts. Flag any code that builds them without an owner-approved spec.
 9. Severity: `blocker` = breaks the build, security, data safety or honesty; `major` = wrong behaviour or a design-rule break; `minor` = should fix; `nit` = style.
 10. Review only what is in front of you. If you cannot judge something (for example whether it boots), say so in `tests_assessment` instead of guessing.

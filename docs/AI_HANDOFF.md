@@ -16,10 +16,10 @@ Then read, in order: [PROJECT_STATUS.md](PROJECT_STATUS.md) → [DESIGN_RULES.md
 
 Last updated 2026-10-17.
 
-- **Nothing has been built, booted or measured.** All AALDM source is IMPLEMENTED (untested). See PROJECT_STATUS.md.
-- **Next real step:** [T-0001](../ai-bridge/tasks/T-0001-first-iso-build-and-vm-boot.md) — first ISO build and VM boot on the owner's Windows PC (VirtualBox, Debian 13 amd64). The Mac cannot build the amd64 ISO.
-- **Owner decision needed:** [T-0002](../ai-bridge/tasks/T-0002-define-unspecified-components.md) — what Almond Glass, Spaces, Bridge, Shield and performance modes are. Do not design or build them before that.
-- **AALLDM** (large edition) is paused until it is designed separately.
+- **First ISO built and booted in VirtualBox (2026-10-17)**, BIOS and UEFI. Report: [tests/results/2026-10-17-vm/RESULTS.md](../tests/results/2026-10-17-vm/RESULTS.md). Idle memory 413 MiB (2 GB VM): above the 300 MB target. Nothing on real hardware yet.
+- **Bugs from that test** are backlog tasks T-0003 (launcher), T-0004 (first-boot polish and docs) and T-0005 (owner feedback: desktop icons, start menu). The owner moves them to ready.
+- **Owner decision needed:** [T-0002](../ai-bridge/tasks/T-0002-confirm-component-definitions.md) — confirm the definitions of Glass, Spaces, Bridge, Shield, performance modes, the edition-name expansions, and whether the AALLDM design is approved.
+- **AALLDM** visual design is in progress with the owner (Fusion V2 / Design 03). No AALLDM code.
 - **Almond AI Bridge** (this workflow) was set up 2026-10-17: [ai-bridge/README.md](../ai-bridge/README.md). Paid OpenAI reviews are off.
 
 ## Hard rules for every agent
@@ -34,20 +34,20 @@ Last updated 2026-10-17.
 ## Generated status
 
 <!-- bridge:handoff:start -->
-_Generated 2026-10-17 17:44 CEST by `ai-bridge/bridge handoff`. Do not edit by hand._
+_Generated 2026-10-18 13:45 CEST by `ai-bridge/bridge handoff`. Do not edit by hand._
 
 **Branch:** `ai-bridge/phase-1`
 
 ### Waiting for the owner
 
-- nothing
+- T-0001 First AALDM ISO build and VM boot test
 
 ### Open tasks
 
 | Task | Title | Status | Assignee | Review rounds | PR |
 |---|---|---|---|---|---|
-| [T-0001](../ai-bridge/tasks/T-0001-first-iso-build-and-vm-boot.md) | First AALDM ISO build and VM boot test | ready | claude-pc | 0/2 |  |
-| [T-0002](../ai-bridge/tasks/T-0002-define-unspecified-components.md) | Define Almond Glass, Spaces, Bridge, Shield and performance modes | ready | owner | 0/2 |  |
+| [T-0002](../ai-bridge/tasks/T-0002-confirm-component-definitions.md) | Confirm component definitions, edition names and AALLDM design status | ready | owner | 0/2 |  |
+| [T-0001](../ai-bridge/tasks/T-0001-first-iso-build-and-vm-boot.md) | First AALDM ISO build and VM boot test | needs-owner | claude-pc | 0/2 |  |
 
 ### Latest reports and reviews
 
@@ -56,6 +56,7 @@ _Generated 2026-10-17 17:44 CEST by `ai-bridge/bridge handoff`. Do not edit by h
 ### Last commits on this branch
 
 ```
+26337d0 2026-10-17 Almond AI Bridge phase 1: shared docs, task/review workflow, free PR checks
 6401433 2026-10-14 AALDM: Almond Pure assets, desktop theme and amd64 build configuration
 96aed5b 2026-10-14 Keep LICENSE as standard MIT text; move scope note to NOTICE
 b3aaaba 2026-10-14 Almond Linux 0.1 'Marcona': first draft of the build configuration
@@ -70,4 +71,5 @@ OpenAI reviews: **off** · model `gpt-5-mini` · spent this month (local log) $0
 
 Add a dated entry when you stop work that someone else will continue. Newest first. Keep each to a few lines: what changed, what is unfinished, what to do next.
 
+- **2026-10-18 — Claude (Mac):** Recorded the PC's 2026-10-17 build and VM boot results in `tests/results/2026-10-17-vm/` and updated PROJECT_STATUS.md (several components now TESTED (VM)). Added the owner's component definitions from their design notes. Opened backlog tasks T-0003–T-0005 for the bugs found. Waiting for the owner on T-0002.
 - **2026-10-17 — Claude (Mac):** Set up the Almond AI Bridge (phase 1 files, local CLI, free PR checks workflow, optional OpenAI review workflow switched off, dashboard). Created PROJECT_STATUS.md, DESIGN_RULES.md, this file, CLAUDE.md and AGENTS.md. No OS code changed. Next: owner reviews and merges the bridge PR; then T-0001 on the PC.

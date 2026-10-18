@@ -29,7 +29,7 @@ The owner's ten AALDM phases, in order. **No phase is complete.** Phase 1 is 0.1
 | 9 | Optimize performance | 0.5 | Planned |
 | 10 | Prepare a stable preview release | 0.5 (1.0, the first stable public release, follows) | Planned |
 
-Nothing is Tested yet: no ISO has been built or booted.
+First evidence (2026-10-17): the AALDM ISO was built and booted in VirtualBox in BIOS and UEFI mode ([results](../tests/results/2026-10-17-vm/RESULTS.md)). Phase 1 is not complete: real hardware, the 5-boot memory median and the remaining acceptance checks are still open.
 
 Native Apple Silicon installation is a separate hardware-dependent workstream, not promised by any version number. Do not start with Mac-chip-specific kernel development.
 

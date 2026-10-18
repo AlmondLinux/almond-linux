@@ -1,6 +1,6 @@
 # AGENTS.md — instructions for AI agents (Codex, ChatGPT and other models)
 
-Almond Linux is an independent Debian-based Linux distribution project in early development. **No ISO has been built or booted yet.** The owner is Alex (GitHub `Xela-CL`).
+Almond Linux is an independent Debian-based Linux distribution project in early development. **One ISO has been built and booted in a VM (2026-10-17); nothing has run on real hardware or been released.** The owner is Alex (GitHub `Xela-CL`).
 
 Roles: **Claude implements** (see `CLAUDE.md`), **OpenAI models review**, **the owner approves and merges**. If you are asked to implement instead, follow `CLAUDE.md` exactly: it applies to every implementer.
 
@@ -22,7 +22,7 @@ These rules apply to every review of this repository (Codex reads this section f
 5. **Logo:** never redrawn, recoloured or altered; full-colour logo only on light backgrounds.
 6. **Security:** no secrets in files; no remote-login services; live-session autologin or passwordless sudo must never become installed-system defaults; never mount or read internal disks of test machines (Dell OptiPlex 390).
 7. **Sensitive paths** need the owner's approval: `.github/`, `ai-bridge/config/`, `ai-bridge/scripts/`, `auto/`, `config/hooks/`, `config/package-lists/`, `scripts/build.sh`, `branding/logo/`, `LICENSE`, `NOTICE`, `SECURITY.md`, `CLAUDE.md`, `AGENTS.md`, and any deletion. Point them out.
-8. **Unspecified components:** Almond Glass, Spaces, Bridge, Shield and performance modes have no approved spec. Flag code that designs or builds them.
+8. **Not approved for building:** Almond Glass, Spaces, Bridge, Shield, performance modes and all of AALLDM are defined only as concepts (docs/PROJECT_STATUS.md), without an approved spec. Flag code that builds them.
 9. Only report what you can see. If you cannot judge something (for example whether the ISO boots), say so instead of guessing.
 
 ## Structured review format (ChatGPT and API reviews)

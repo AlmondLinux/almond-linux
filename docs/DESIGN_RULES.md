@@ -60,7 +60,7 @@ Hard rules for AALDM, because performance is its top priority:
 | Almond Files | PCManFM-Qt, configured. No custom file manager for 0.1; missing features go upstream. Never auto-mount internal disks |
 | Almond Frame | Openbox themes Almond-Pure-Light / -Dark / -Ocean, Qt Fusion + Almond palette, LXQt QSS theme. GTK apps get Adwaita / Adwaita-dark settings only |
 | Almond Icons / Almond Fold | freedesktop icon theme, SVG, flat, under 8 KB per file, checked by `tools/check-icons.py`. Third-party brand icons (Firefox etc.) are not redrawn |
-| Almond Glass, Spaces, Bridge, Shield, performance modes | **Not specified yet.** Do not design or build them until the owner writes or approves a spec ([T-0002](../ai-bridge/tasks/T-0002-define-unspecified-components.md)). Anything translucent ("glass") conflicts with the AALDM rules above |
+| Almond Glass, Spaces, Bridge, Shield, performance modes | **Concepts only** (definitions in [PROJECT_STATUS.md](PROJECT_STATUS.md#components)). Do not build them until the owner approves a spec ([T-0002](../ai-bridge/tasks/T-0002-confirm-component-definitions.md)). Glass's translucent styles and the Medium/High performance modes conflict with the AALDM rules above, so they are AALLDM-only unless the owner decides otherwise. Bridge must never promise universal Windows compatibility; Shield must stay optional |
 
 ## Customisation requirements
 
