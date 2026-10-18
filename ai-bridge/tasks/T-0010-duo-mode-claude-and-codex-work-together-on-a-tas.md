@@ -33,7 +33,8 @@ The owner gives one task; Claude and Codex work on it together, each doing what 
 - [x] Headless Claude limited by an allowlist; Codex sandboxed (read-only, workspace-write when implementing)
 - [x] `ai-bridge/bridge ask codex|claude "question"`, read-only and logged
 - [x] Tests with fake CLIs; end-to-end run with fakes
-- [ ] One real duo run with the real Claude and Codex
+- [x] One real duo run with the real Claude and Codex (T-0011, PR #7)
+- [x] Live viewer (`ai-bridge/bridge view`)
 
 ## Tests to run
 
@@ -47,3 +48,4 @@ The owner gives one task; Claude and Codex work on it together, each doing what 
 
 ## Log
 - 2026-10-18 15:20 — built by Claude (Mac); real run pending
+- 2026-10-18 15:40 — real run T-0011 succeeded; viewer added; Codex's findings applied (CodexCLI.app path, critic concerns carried into implement/review, untracked files refused)

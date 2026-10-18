@@ -35,7 +35,7 @@ Last updated 2026-10-17.
 ## Generated status
 
 <!-- bridge:handoff:start -->
-_Generated 2026-10-18 15:10 CEST by `ai-bridge/bridge handoff`. Do not edit by hand._
+_Generated 2026-10-18 15:14 CEST by `ai-bridge/bridge handoff`. Do not edit by hand._
 
 **Branch:** `task/T-0010-duo-mode-claude-and-codex-work-t`
 
@@ -62,6 +62,7 @@ _Generated 2026-10-18 15:10 CEST by `ai-bridge/bridge handoff`. Do not edit by h
 ### Last commits on this branch
 
 ```
+54b2c10 2026-10-18 T-0010: duo mode - Claude and Codex work on a task together
 8de263d 2026-10-18 T-0009: Link knowledge review to PR #5
 ad8dced 2026-10-18 T-0009: Preserve sourced Almond conversation knowledge and gaps
 d668bc8 2026-10-18 T-0008: website status draft is in AlmondLinux/almondlinux.github.io#1
@@ -69,7 +70,6 @@ d668bc8 2026-10-18 T-0008: website status draft is in AlmondLinux/almondlinux.gi
 1a8d4a1 2026-10-18 Record owner decisions: edition names (D-0002), AALLDM visual design approved (D-0003)
 aa2cd2a 2026-10-18 Record the first VM build and boot test; reconcile project status
 26337d0 2026-10-17 Almond AI Bridge phase 1: shared docs, task/review workflow, free PR checks
-6401433 2026-10-14 AALDM: Almond Pure assets, desktop theme and amd64 build configuration
 ```
 
 ### Paid API reviews

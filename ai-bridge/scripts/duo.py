@@ -44,6 +44,7 @@ SHARED_CONTEXT = [
 ]
 CODEX_CANDIDATES = [
     "/Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/codex",
+    "/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS/codex",
     "/Applications/Codex.app/Contents/Resources/codex-cli/bin/codex",
 ]
 CLAUDE_CANDIDATES = [os.path.expanduser("~/.local/bin/claude")]
@@ -310,8 +311,11 @@ def step_plan_revise(cfg, task, planner, plan, review):
     return call(planner, cfg, prompt, "plan-schema.json")
 
 
-def step_implement(cfg, task, who, plan, findings=None):
+def step_implement(cfg, task, who, plan, findings=None, plan_review=None):
     extra = "\n\n## Agreed plan\n%s" % fence(plan)
+    if plan_review and plan_review["verdict"] == "change":
+        extra += "\n\n## The plan critic's concerns about the first plan\nThe plan was revised, " \
+                 "but these concerns still stand unless the revised plan answers them:\n%s" % fence(plan_review)
     if findings:
         extra += "\n\n## %s's review of your last round\n%s\n\nFix the findings you agree " \
                  "with. For any you reject, say why in notes_for_reviewer." % (
@@ -323,12 +327,15 @@ def step_implement(cfg, task, who, plan, findings=None):
     return call(who, cfg, prompt, "implement-schema.json", write=True)
 
 
-def step_review(cfg, task, who, base, implementation, checks):
+def step_review(cfg, task, who, base, implementation, checks, plan_review=None):
     packet = bridge.build_packet(task, cfg, base)
+    concerns = ""
+    if plan_review and plan_review["verdict"] == "change":
+        concerns = "## Concerns raised about the first plan (check they were handled)\n%s\n\n" % fence(plan_review)
     prompt = preamble(who, task, "REVIEW") + "\n\n## %s's implementation notes\n%s\n\n" \
-        "## Free check results\n%s\n\n%s" % (
+        "## Free check results\n%s\n\n%s%s" % (
             NAMES[other(who)], fence(implementation), bridge.format_checks(checks, markdown=True),
-            packet)
+            concerns, packet)
     return call(who, cfg, prompt, "review-schema.json")
 
 
@@ -388,10 +395,10 @@ def cmd_duo(args, cfg):
     # 1-3: plan, criticise once, revise once.
     plan, u = step_plan(cfg, task, planner)
     say(tid, NAMES[planner], NAMES[critic], "plan", plan, u)
-    review, u = step_plan_review(cfg, task, critic, plan)
-    say(tid, NAMES[critic], NAMES[planner], "plan review (%s)" % review["verdict"], review, u)
-    if review["verdict"] == "change":
-        plan, u = step_plan_revise(cfg, task, planner, plan, review)
+    plan_review, u = step_plan_review(cfg, task, critic, plan)
+    say(tid, NAMES[critic], NAMES[planner], "plan review (%s)" % plan_review["verdict"], plan_review, u)
+    if plan_review["verdict"] == "change":
+        plan, u = step_plan_revise(cfg, task, planner, plan, plan_review)
         say(tid, NAMES[planner], NAMES[critic], "revised plan", plan, u)
     bridge.write(os.path.join(CONV, "%s-plan.json" % tid), json.dumps(plan, indent=2) + "\n")
     if plan["questions_for_owner"] and not args.ignore_questions:
@@ -415,7 +422,7 @@ def cmd_duo(args, cfg):
     findings, implementations, rnd = None, [], 0
     while True:
         rnd += 1
-        result, u = step_implement(cfg, bridge.find_task(tid), implementer, plan, findings)
+        result, u = step_implement(cfg, bridge.find_task(tid), implementer, plan, findings, plan_review)
         implementations.append(result)
         say(tid, NAMES[implementer], NAMES[reviewer], "implementation round %d" % rnd, result, u)
         checks = bridge.run_checks(base_branch, cfg)
@@ -424,7 +431,7 @@ def cmd_duo(args, cfg):
             bridge.format_checks(checks, markdown=True))
         sha = commit_all("%s: duo round %d (%s implements, %s reviews)" % (tid, rnd, NAMES[implementer], NAMES[reviewer]))
         task = bridge.find_task(tid)
-        review, u = step_review(cfg, task, reviewer, base_branch, result, checks)
+        review, u = step_review(cfg, task, reviewer, base_branch, result, checks, plan_review)
         say(tid, NAMES[reviewer], NAMES[implementer], "review round %d (%s)" % (rnd, review["verdict"]), review, u)
         bridge.record_review(bridge.find_task(tid), review, "%s (duo)" % NAMES[reviewer])
         task = bridge.find_task(tid)
