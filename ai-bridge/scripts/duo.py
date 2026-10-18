@@ -329,8 +329,12 @@ def step_plan_revise(cfg, task, planner, plan, review):
     return call(planner, cfg, prompt, "plan-schema.json")
 
 
-def step_implement(cfg, task, who, plan, findings=None, failed_checks=None):
+def step_implement(cfg, task, who, plan, findings=None, failed_checks=None, plan_review=None):
+    plan_review = plan_review or saved_plan_review(task["id"])
     extra = "\n\n## Agreed plan\n%s" % fence(plan)
+    if plan_review and plan_review["verdict"] == "change":
+        extra += "\n\n## The plan critic's concerns about the first plan\nThe plan was revised, " \
+                 "but these concerns still stand unless the revised plan answers them:\n%s" % fence(plan_review)
     if findings:
         extra += "\n\n## %s's review of your last round\n%s\n\nFix the findings you agree " \
                  "with. For any you reject, say why in notes_for_reviewer." % (
@@ -347,12 +351,16 @@ def step_implement(cfg, task, who, plan, findings=None, failed_checks=None):
     return call(who, cfg, prompt, "implement-schema.json", write=True)
 
 
-def step_review(cfg, task, who, base, implementation, checks):
+def step_review(cfg, task, who, base, implementation, checks, plan_review=None):
+    plan_review = plan_review or saved_plan_review(task["id"])
     packet = bridge.build_packet(task, cfg, base)
+    concerns = ""
+    if plan_review and plan_review["verdict"] == "change":
+        concerns = "## Concerns raised about the first plan (check they were handled)\n%s\n\n" % fence(plan_review)
     prompt = preamble(who, task, "REVIEW") + "\n\n## %s's implementation notes\n%s\n\n" \
-        "## Free check results\n%s\n\n%s" % (
+        "## Free check results\n%s\n\n%s%s" % (
             NAMES[other(who)], fence(implementation), bridge.format_checks(checks, markdown=True),
-            packet)
+            concerns, packet)
     return call(who, cfg, prompt, "review-schema.json")
 
 
@@ -392,6 +400,11 @@ def plan_disagreements(review, implementer_forced=False):
     return problems
 
 
+def saved_plan_review(tid):
+    path = os.path.join(CONV, "%s-plan-review.json" % tid)
+    return json.loads(bridge.read(path)) if os.path.exists(path) else None
+
+
 def agree_plan(cfg, task, planner, critic, implementer_forced=False):
     """Steps 1-3. Returns (plan, disagreements). The plan is revised at most
     once, and a revision is always reviewed again."""
@@ -400,6 +413,7 @@ def agree_plan(cfg, task, planner, critic, implementer_forced=False):
     say(tid, NAMES[planner], NAMES[critic], "plan", plan, u)
     questions = merge_questions(plan["questions_for_owner"])
     review, u = step_plan_review(cfg, task, critic, plan)
+    bridge.write(os.path.join(CONV, "%s-plan-review.json" % tid), json.dumps(review, indent=2) + "\n")
     say(tid, NAMES[critic], NAMES[planner], "plan review (%s)" % review["verdict"], review, u)
     if plan_disagreements(review, implementer_forced):
         plan, u = step_plan_revise(cfg, task, planner, plan, review)

@@ -28,6 +28,8 @@ The self-tests replace the OpenAI API with a fake and write only to a temporary 
 | Full flow with fakes | Scratch clone, `ALMOND_DUO_CLAUDE`/`ALMOND_DUO_CODEX` pointing at the fakes: plan → critique (change) → revision → Codex implements → checks → Claude requests changes → fix → approve → report, 3 commits, task needs-owner | works as designed |
 | Owner-question stop | `FAKE_AI_QUESTIONS=1`: stops before any file is written (exit 3), task needs-owner; `duo T-xxxx` resumes and finishes | works |
 | Refusals | dirty working tree → refused | works |
+| Real duo run | T-0011 docs fixes (PR #7): Claude planned and implemented, Codex agreed with the plan and approved the result in one round; checks passed | worked end to end |
+| Viewer | `tests/test_duo.py`: transcript rendering, HTML escaping, only `.md` files from the conversations folder are served (path tricks return 404); opened in the browser pane during the real run | works |
 | Real CLIs | one tiny read-only structured call each to Claude (`claude -p --json-schema`) and Codex (`codex exec --output-schema`) | both answered correctly |
 
 ## Not tested yet
@@ -45,4 +47,4 @@ The self-tests replace the OpenAI API with a fake and write only to a temporary 
 
 ## Follow-up duo validation
 
-See [DUO-VALIDATION.md](DUO-VALIDATION.md) for the real Claude → Codex plan/implement/review cycle, 64-test suite and current fake end-to-end results. Earlier counts and “not tested” notes above are historical snapshots.
+See [DUO-VALIDATION.md](DUO-VALIDATION.md) for the real Claude → Codex plan/implement/review cycle, 68-test suite and current fake end-to-end results. Earlier counts and “not tested” notes above are historical snapshots.

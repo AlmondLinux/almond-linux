@@ -18,6 +18,7 @@
 #     ai-bridge/bridge approve T-0001      # OWNER ONLY (needs a real terminal)
 #     ai-bridge/bridge duo "task"          # Claude + Codex work on it together
 #     ai-bridge/bridge ask codex "..."      # ask the other AI a question
+#     ai-bridge/bridge view                # watch them talk: http://127.0.0.1:4820
 #
 # Standard library only (Python 3.11+ for tomllib). No command makes a paid
 # API call unless openai.enabled is true in the config AND the caller passes
@@ -1386,6 +1387,16 @@ def cmd_dashboard(args, cfg):
     return 0
 
 
+def cmd_view(args, cfg):
+    url = "http://127.0.0.1:%d" % args.port
+    if args.open:
+        opener = "open" if sys.platform == "darwin" else "xdg-open"
+        if shutil.which(opener):
+            subprocess.Popen([opener, url])
+    viewer = os.path.join(os.path.dirname(os.path.abspath(__file__)), "view.py")
+    os.execv(sys.executable, [sys.executable, viewer, "--port", str(args.port)])
+
+
 def cmd_ready(args, cfg):
     t = find_task(args.task)
     if t.get("status") != "backlog":
@@ -1484,6 +1495,9 @@ def main(argv=None):
     s.add_argument("--area", default="general", help="area for a new task")
     s.add_argument("--ignore-questions", action="store_true",
                    help="implement even if the plan has questions for the owner")
+    s = sub.add_parser("view", help="live web view of Claude <-> Codex conversations")
+    s.add_argument("--port", type=int, default=4820)
+    s.add_argument("--open", action="store_true", help="open it in the default browser")
     s = sub.add_parser("ask", help="ask Claude or Codex a read-only question about the repo")
     s.add_argument("who", choices=["claude", "codex"])
     s.add_argument("question", nargs="+")
@@ -1494,7 +1508,7 @@ def main(argv=None):
                 "check": cmd_check, "finish": cmd_finish, "out": cmd_out, "in": cmd_in,
                 "review": cmd_review, "ci-review": cmd_ci_review, "handoff": cmd_handoff,
                 "dashboard": cmd_dashboard, "ready": cmd_ready, "approve": cmd_approve,
-                "duo": lambda a, c: _duo().cmd_duo(a, c), "ask": lambda a, c: _duo().cmd_ask(a, c)}
+                "view": cmd_view, "duo": lambda a, c: _duo().cmd_duo(a, c), "ask": lambda a, c: _duo().cmd_ask(a, c)}
     if args.cmd is None:
         args.all = False
     try:

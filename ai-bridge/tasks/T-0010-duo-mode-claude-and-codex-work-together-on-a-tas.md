@@ -35,6 +35,8 @@ The owner gives one task; Claude and Codex work on it together, each doing what 
 - [x] Tests with fake CLIs; end-to-end run with fakes
 - [x] One real duo run with the real Claude and Codex (isolated T-9000, evidence in ai-bridge/docs/DUO-VALIDATION.md)
 
+- [x] Live viewer (`ai-bridge/bridge view`), retained from Claude’s update
+
 ## Tests to run
 
 - `ai-bridge/bridge check` (includes tests/test_duo.py)
@@ -49,3 +51,5 @@ The owner gives one task; Claude and Codex work on it together, each doing what 
 - 2026-10-18 15:20 — built by Claude (Mac); real run pending
 
 - 2026-10-18 — Codex and Claude completed the workflow hardening in a separate checkout, with an independent review and real plan/implement/review smoke test. See ai-bridge/docs/DUO-VALIDATION.md. Follow-up PR is stacked on T-0010; no merge performed.
+
+- 2026-10-18 — Integrated Claude’s 3e8cbca viewer and original-critic context forwarding into the follow-up; upstream also records its T-0011 live test in PR #7.

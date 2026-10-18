@@ -216,7 +216,7 @@ class PlanAgreement(unittest.TestCase):
         with mock.patch.object(duo, "step_plan", return_value=(plans.pop(0), None)), \
                 mock.patch.object(duo, "step_plan_review", review), \
                 mock.patch.object(duo, "step_plan_revise", revise), \
-                mock.patch.object(duo, "say"):
+                mock.patch.object(duo, "say"), mock.patch.object(bridge, "write"):
             result = duo.agree_plan({}, {"id": "T-0001"}, "claude", "codex", implementer_forced=forced)
         return result, calls
 
@@ -332,6 +332,56 @@ class ImplementRounds(Sandbox):
     def test_unresolved_review_is_needs_owner(self):
         (outcome, rnd, *_), _ = self.run_rounds(["pass", "pass"], ["request_changes", "request_changes"])
         self.assertEqual((outcome, rnd), ("needs-owner", 2))
+
+
+class Viewer(unittest.TestCase):
+    def setUp(self):
+        import importlib
+        self.view = importlib.import_module("view")
+
+    def test_render_turns_and_speakers(self):
+        text = ("# T-0001 — duo conversation\n\nintro\n\n"
+                "## 2026-10-18 15:10 · Claude → Codex: plan\n\n- **summary:** s\n  - nested\n\n_3s · 2 turns_\n"
+                "## 2026-10-18 15:11 · Codex → Claude: review round 1 (approve)\n\n| a | b |\n|---|---|\n| 1 | 2 |\n"
+                "## 2026-10-18 15:12 · Claude + Codex → Owner: done\n\nok\n")
+        r = self.view.render(text)
+        self.assertEqual(r["count"], 3)
+        self.assertEqual(r["title"], "T-0001 — duo conversation")
+        self.assertIn('class="msg claude"', r["turns"])
+        self.assertIn('class="msg codex"', r["turns"])
+        self.assertIn('class="msg claude-codex"', r["turns"])
+        self.assertIn("<table>", r["turns"])
+        self.assertIn('<div class="foot">3s · 2 turns</div>', r["turns"])
+        self.assertIn("<ul><li><b>summary:</b> s</li><ul><li>nested</li></ul></ul>", r["turns"])
+
+    def test_html_is_escaped(self):
+        r = self.view.render("## 2026-10-18 15:10 · Codex → Claude: x\n\n<script>alert(1)</script>\n")
+        self.assertNotIn("<script>", r["turns"])
+
+    def test_only_serves_conversation_files(self):
+        import http.client, threading
+        from http.server import ThreadingHTTPServer
+        tmp = tempfile.mkdtemp()
+        with open(os.path.join(tmp, "T-0001.md"), "w") as f:
+            f.write("# T\n\n## 2026-10-18 15:10 · Claude → Codex: plan\n\nhi\n")
+        self.view.Handler.conv_dir = tmp
+        server = ThreadingHTTPServer(("127.0.0.1", 0), self.view.Handler)
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        try:
+            def get(path):
+                c = http.client.HTTPConnection("127.0.0.1", server.server_address[1], timeout=5)
+                c.request("GET", path)
+                r = c.getresponse()
+                return r.status, r.read().decode()
+            self.assertEqual(get("/")[0], 200)
+            status, body = get("/api/list")
+            self.assertIn("T-0001.md", body)
+            self.assertEqual(get("/api/conv?name=T-0001.md")[0], 200)
+            self.assertEqual(get("/api/conv?name=../../bridge.toml")[0], 404)
+            self.assertEqual(get("/api/conv?name=%2E%2E%2Fsecret.md")[0], 404)
+        finally:
+            server.shutdown()
+            server.server_close()
 
 
 if __name__ == "__main__":

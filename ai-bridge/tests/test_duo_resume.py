@@ -112,5 +112,22 @@ class MissingBase(unittest.TestCase):
                 duo.review_base({'duo_base': 'a'*40})
 
 
+class CriticContext(unittest.TestCase):
+    def test_saved_critic_reaches_implementation_and_review(self):
+        import json
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(duo, 'CONV', tmp), \
+                mock.patch.object(duo, 'preamble', return_value=''), \
+                mock.patch.object(bridge, 'build_packet', return_value='packet'), \
+                mock.patch.object(duo, 'call', return_value=({}, None)) as call:
+            body = {'verdict': 'change', 'concerns': ['Keep the agreed scope'],
+                    'missing_steps': [], 'implementer_agree': True, 'notes': ''}
+            bridge.write(os.path.join(tmp, 'T-9000-plan-review.json'), json.dumps(body))
+            task = {'id': 'T-9000'}
+            duo.step_implement({}, task, 'claude', {})
+            self.assertIn('Keep the agreed scope', call.call_args.args[2])
+            duo.step_review({}, task, 'codex', 'main', {}, [])
+            self.assertIn('Keep the agreed scope', call.call_args.args[2])
+
+
 if __name__ == '__main__':
     unittest.main()

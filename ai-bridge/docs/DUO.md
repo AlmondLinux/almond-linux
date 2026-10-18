@@ -29,6 +29,14 @@ You ──task──► Claude ──plan──► Codex ──critique──►
                         report + transcript → you (needs-owner)
 ```
 
+## Watching them talk
+
+```sh
+ai-bridge/bridge view --open
+```
+
+This opens a local page (http://127.0.0.1:4820) showing every conversation as chat bubbles: Claude in brown, Codex in blue, checks in green, and you in grey. It updates every 3 seconds and shows "Claude and Codex are working" while a duo run is going. You can leave it open in a browser tab during a run. Inside the Claude desktop app it opens in the browser pane (launch configuration `almond-duo`). The page is read-only and only reachable from this Mac.
+
 ## Who does what
 
 From `ai-bridge/config/duo-roles.md`. These are working assumptions; change them in `bridge.toml [duo]` if the transcripts show otherwise.
@@ -48,6 +56,7 @@ The main reason to use two models: **each catches mistakes the other is blind to
 ## Limits and safety
 
 - **Plan critique:** if the critic asks for changes (or objects to the implementer), the planner revises once and the critic reviews the revision a second time. If they still disagree, the run **stops before any code is written** and the task goes to you (`needs-owner`); the disagreement is added to the task file. `--ignore-questions` does not skip this.
+- Original plan-critic concerns are saved and forwarded to both implementation and final review, even after the revised plan is accepted.
 - **Review rounds:** at most 2 (`max_review_rounds`). After that the task goes to you, even if they still disagree.
 - **Free checks decide too:** a failed `bridge check` always sends the implementer back for a fix round, even if the reviewer approved. If checks still fail when the rounds run out, the result is **failed** (exit code 1), not done. Only "reviewer approved and every check passed" counts as success (exit code 0); an unresolved review ends as needs-owner (exit code 3).
 - **Questions only you can answer** (in the plan or its revision; a revision cannot drop an earlier question) stop the run **before any code is written.** They are added to the task file; answer them there or tell Claude, then run `ai-bridge/bridge duo T-xxxx` again.
