@@ -31,7 +31,7 @@ Rules:
 **The first AALDM ISO was built and booted in VirtualBox on 2026-10-17, in legacy BIOS and UEFI mode.** Build commit `6401433`, ISO SHA256 `7129bf3e3f7bededa373fe74dcc1e742891fd4d4c5dd7488581b5360d653fe9d` (845,152,256 bytes). Full report: [tests/results/2026-10-17-vm/RESULTS.md](../tests/results/2026-10-17-vm/RESULTS.md).
 
 - Nothing has run on real hardware. Nothing is APPROVED. Nothing is released.
-- The 300 MB idle-RAM target was **not met** in the first single-boot measurements (413 MiB at 2 GB RAM, 393 MiB at 1 GB).
+- The 300 MiB idle-RAM target was **not met** in the first single-boot measurements (BIOS mode, a terminal open: 413.2 MiB at 2048 MB RAM, 393.2 MiB at 1024 MB).
 - Bugs found in that test are listed under [Known bugs](#known-bugs-and-risks) and turned into backlog tasks.
 
 ## Vision
@@ -52,7 +52,7 @@ Edition names confirmed by the owner on 2026-10-18 ([D-0002](../ai-bridge/decisi
 | Component | What it is | Rung | Evidence / notes |
 |---|---|---|---|
 | Build configuration (live-build) | `auto/config`, package list, hooks, `scripts/build.sh` | **TESTED (VM)** | Built OK on 2026-10-17 in a Debian 13.7 VM (live-build 1:20250505+deb13u1), 0 errors, 765 packages, both hooks ran. Warnings: no zstd (initramfs gzip-compressed) |
-| ISO image | Bootable AALDM live ISO | **TESTED (VM)** | Boots to the LXQt desktop with autologin in BIOS (isolinux) and UEFI (GRUB) mode, 2 GB and 1 GB RAM. Not tested: Secure Boot, real hardware, fail-safe and Utilities menu entries |
+| ISO image | Bootable AALDM live ISO | **TESTED (VM)** | Boots to the LXQt desktop with autologin: BIOS (isolinux) at 2048 MB and 1024 MB, UEFI (GRUB) at 2048 MB. Not tested: UEFI at 1024 MB, Secure Boot, real hardware, fail-safe and Utilities menu entries |
 | Official Almond logo | Owner's brown almond logo | **APPROVED** (as artwork) | Adopted by the owner 2026-10-14. Master: `branding/logo/`. Rules: [DESIGN_RULES.md](DESIGN_RULES.md#logo) |
 | Approved visual design — **Almond Pure** | The look of AALDM: flat, warm, no transparency | **DESIGNED** | Owner approved four AI mockups 2026-10-14 (image 1 = priority, image 2 = Super-key launcher). Mockup images are not in this repository. The built desktop has not been compared with the mockups. Owner feedback after the first boot: dislikes the desktop icons; wants a start menu (backlog task) |
 | Almond Icons + Almond Fold | Icon theme and folder-colour variants (Blue, Gray, Green, Orange, Plum, Red) | **IMPLEMENTED** (seen running) | Icon caches built in the image and icons visible in the VM, but no icon checks were run. Four launcher tiles show no icon. `tools/check-icons.py` checks the files only |
@@ -73,7 +73,7 @@ Edition names confirmed by the owner on 2026-10-18 ([D-0002](../ai-bridge/decisi
 
 ## Performance targets (AALDM)
 
-Targets: idle RAM under 300 MB used 120 s after login, usable on 1 GB RAM where feasible, minimal idle CPU, low GPU needs. Method: [PERFORMANCE.md](PERFORMANCE.md).
+Targets: idle RAM under 300 MiB used 120 s after login (nothing opened), usable on 1 GB RAM where feasible, minimal idle CPU, low GPU needs. Method: [PERFORMANCE.md](PERFORMANCE.md).
 
 First measurements (2026-10-17, one boot each, VirtualBox, a QTerminal window open, **not** the 5-boot median the method asks for):
 
@@ -82,7 +82,7 @@ First measurements (2026-10-17, one boot each, VirtualBox, a QTerminal window op
 | 2048 MB | **413.2 MiB** | 243.7 MiB | Xorg 93.9, LXQt session + panel 53.6, pcmanfm-qt 18.7, PulseAudio 17.5, gvfs + udisks2 15.7 |
 | 1024 MB | **393.2 MiB** | 244.5 MiB | same pattern |
 
-So the 300 MB target is **not met** yet. The 1 GB run had four 60-second VM clock stalls. Raw reports: [tests/results/2026-10-17-vm/](../tests/results/2026-10-17-vm/). No comparison with other distributions is published until measured with the full method ([ROADMAP.md](ROADMAP.md#aaldm-goal-a-better-light-desktop-than-linux-mint-xfce)).
+So the 300 MiB target is **not met** yet (and these runs had a terminal open, which the method excludes). The 1 GB run had four 60-second VM clock stalls. Raw reports: [tests/results/2026-10-17-vm/](../tests/results/2026-10-17-vm/). No comparison with other distributions is published until measured with the full method ([ROADMAP.md](ROADMAP.md#aaldm-goal-a-better-light-desktop-than-linux-mint-xfce)).
 
 ## Hardware testing
 
@@ -103,7 +103,7 @@ Found in the 2026-10-17 VM test ([RESULTS.md](../tests/results/2026-10-17-vm/RES
 5. **No zstd** in the image, so the initramfs is gzip-compressed (effect not measured).
 6. **measure-memory.sh:** possibly counts kernel threads as "unreadable".
 7. **Docs vs reality:** BUILD.md recommends 4 vCPUs (froze on this PC); AALDM-PLAN names Firefox ESR 140 (image has 153.5); PC-SETUP.md runs measure-memory.sh without `-w 120`.
-8. **Idle memory** above the 300 MB target (see Performance targets).
+8. **Idle memory** above the 300 MiB target (see Performance targets).
 
 Owner feedback after the first look: does not like the desktop icons (Home, Computer, Trash); wants a start menu with categories and settings.
 
@@ -132,6 +132,7 @@ Generated from `ai-bridge/tasks/` by `ai-bridge/bridge handoff`. Do not edit bet
 
 ## Change log
 
+- 2026-10-18 — Correction (found by Codex in PR #5): the ISO row claimed UEFI boots at 1 GB; the report shows UEFI only at 2048 MB. Target written as 300 MiB, as in PERFORMANCE.md.
 - 2026-10-18 — Owner decisions: edition names confirmed (D-0002); AALLDM visual design approved, PLANNED → DESIGNED, and with it the look of Almond Glass and Spaces (D-0003). Their behaviour (restore, multi-monitor, styles) still needs a spec.
 - 2026-10-18 — Recorded the 2026-10-17 VM build and boot test: build configuration, ISO, launcher (partly), boot artwork (partly) and memory script moved to TESTED (VM); AALDM edition to TESTED (VM), first boot only. Added the owner's definitions of Glass, Spaces, Bridge, Shield and performance modes from the owner's design notes (the 2026-10-17 entry wrongly said they appeared nowhere: they were in the owner's notes, not in this repository). AALLDM: design in progress, approval to be confirmed by the owner.
 - 2026-10-17 — File created from README, ROADMAP and AALDM-PLAN as of commit 6401433. Glass, Spaces, Bridge, Shield and performance modes added as PLANNED / not specified (they appear in the owner's brief but nowhere in the repository).
