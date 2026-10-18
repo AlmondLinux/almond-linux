@@ -18,8 +18,7 @@ Last updated 2026-10-17.
 
 - **First ISO built and booted in VirtualBox (2026-10-17)**, BIOS and UEFI. Report: [tests/results/2026-10-17-vm/RESULTS.md](../tests/results/2026-10-17-vm/RESULTS.md). Idle memory 413 MiB (2 GB VM): above the 300 MB target. Nothing on real hardware yet.
 - **Bugs from that test** are backlog tasks T-0003 (launcher), T-0004 (first-boot polish and docs) and T-0005 (owner feedback: desktop icons, start menu). The owner moves them to ready.
-- **Owner decision needed:** [T-0002](../ai-bridge/tasks/T-0002-confirm-component-definitions.md) — confirm the definitions of Glass, Spaces, Bridge, Shield, performance modes, the edition-name expansions, and whether the AALLDM design is approved.
-- **AALLDM** visual design is in progress with the owner (Fusion V2 / Design 03). No AALLDM code.
+- **Owner decisions 2026-10-18:** edition names confirmed ([D-0002](../ai-bridge/decisions/D-0002-edition-names.md)); AALLDM visual design approved ([D-0003](../ai-bridge/decisions/D-0003-aalldm-visual-design-approved.md)) — DESIGNED, no code. Still open in [T-0002](../ai-bridge/tasks/T-0002-confirm-component-definitions.md): performance-modes scope, Glass/Spaces behaviour, Bridge, Shield.
 - **Almond AI Bridge** (this workflow) was set up 2026-10-17: [ai-bridge/README.md](../ai-bridge/README.md). Paid OpenAI reviews are off.
 
 ## Hard rules for every agent
@@ -34,7 +33,7 @@ Last updated 2026-10-17.
 ## Generated status
 
 <!-- bridge:handoff:start -->
-_Generated 2026-10-18 13:45 CEST by `ai-bridge/bridge handoff`. Do not edit by hand._
+_Generated 2026-10-18 14:39 CEST by `ai-bridge/bridge handoff`. Do not edit by hand._
 
 **Branch:** `ai-bridge/phase-1`
 
@@ -56,6 +55,7 @@ _Generated 2026-10-18 13:45 CEST by `ai-bridge/bridge handoff`. Do not edit by h
 ### Last commits on this branch
 
 ```
+aa2cd2a 2026-10-18 Record the first VM build and boot test; reconcile project status
 26337d0 2026-10-17 Almond AI Bridge phase 1: shared docs, task/review workflow, free PR checks
 6401433 2026-10-14 AALDM: Almond Pure assets, desktop theme and amd64 build configuration
 96aed5b 2026-10-14 Keep LICENSE as standard MIT text; move scope note to NOTICE

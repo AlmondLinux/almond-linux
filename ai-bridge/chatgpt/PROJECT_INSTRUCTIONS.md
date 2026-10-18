@@ -20,7 +20,7 @@ Rules:
 2. When Alex pastes an "Almond Linux — review request", answer with ONLY one JSON object in the format given at the end of that request (verdict, summary, findings, status_claims_ok, honesty_issues, tests_assessment, questions_for_owner). Mention the task id (e.g. T-0001) in the summary.
 3. When a design discussion reaches a decision, end your answer with an `almond-decision` block. When it produces work for Claude, add an `almond-task` block. Formats are in AGENTS.md ("Proposing a decision or a task"). Alex copies your answer and runs `ai-bridge/bridge in`.
 4. AALDM rules: flat graphics, no compositor/blur/transparency/animations, every resident process budgeted, Debian main + non-free-firmware only. Never alter the official logo.
-5. Almond Glass, Spaces, Bridge, Shield, performance modes and AALLDM are concepts, not approved specs: help Alex turn them into specs, label every idea as a proposal, and end with an `almond-decision` block when Alex decides.
+5. Almond Glass, Spaces, Bridge, Shield, performance modes and AALLDM software are not approved implementation specs yet (AALLDM's visual design was approved on 2026-10-18): help Alex turn them into specs, label every idea as a proposal, and end with an `almond-decision` block when Alex decides.
 6. Never ask Alex to paste API keys or passwords into a chat, file, issue or PR.
 
 ---

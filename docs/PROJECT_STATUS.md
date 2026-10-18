@@ -40,12 +40,12 @@ Almond Linux is an independent Linux distribution project: simple, stable, fast,
 
 ## Editions
 
-Exact expansions of the edition names: **to be confirmed by the owner** ([T-0002](../ai-bridge/tasks/T-0002-confirm-component-definitions.md)). The owner set "Distribution" for both on 2026-10-14; an AALLDM design prompt in the owner's notes says "A All Large Linux Distro Model".
+Edition names confirmed by the owner on 2026-10-18 ([D-0002](../ai-bridge/decisions/D-0002-edition-names.md)).
 
 | Edition | Meaning | Rung | Notes |
 |---|---|---|---|
 | **AALDM** — A All Little Distribution Model | Light edition for older and low-power 64-bit PCs | **TESTED (VM)** — first boot only | Debian 13 + LXQt + Openbox + X11 + LightDM, amd64 hybrid BIOS/UEFI ISO. Built and booted 2026-10-17 (see Overall). Plan: [AALDM-PLAN.md](AALDM-PLAN.md) |
-| **AALLDM** — A All Large Linux Distribution Model | Large, modern edition for newer PCs | **PLANNED** — visual design in progress | Direction "Almond Fusion V2", based on "Design 03 — Almond Custom": graphite/charcoal with gold and silver accents, right-side translucent Almond Glass bar, widgets, Almond Spaces, Chrome as preferred browser (redistribution unresolved). The owner's notes (2026-10-15) record it as ongoing, without a complete visual sign-off. **Owner to confirm whether it is now approved** (then: DESIGNED, with the mockup and date). No AALLDM code exists. Base system, minimum hardware and CPU architectures undecided |
+| **AALLDM** — A All Large Linux Distribution Model | Large, modern edition for newer PCs | **DESIGNED** (visual baseline approved) | Owner approved the final **Almond Fusion** design (based on Design 03 — Almond Custom) on 2026-10-18 ([D-0003](../ai-bridge/decisions/D-0003-aalldm-visual-design-approved.md)): graphite/charcoal with gold and silver accents, right-side translucent Almond Glass bar, widgets, Almond Spaces, Chrome as preferred browser (redistribution unresolved). Mockup images not in this repository yet. **No AALLDM software exists.** Base system, minimum hardware and CPU architectures undecided |
 
 ## Components
 
@@ -60,8 +60,8 @@ Exact expansions of the edition names: **to be confirmed by the owner** ([T-0002
 | **Almond Files** | File manager = configured PCManFM-Qt (no custom app) | **IMPLEMENTED** (seen running) | Opened in the VM; none of the [AALDM-PLAN §7](AALDM-PLAN.md#7-file-manager-pcmanfm-qt-feature-map) checks were run. Volume monitors goa/afc/gphoto2 were diverted at build time. A larger "Almond Files Pro — Adaptive Minimalist" design for AALLDM is in the owner's notes (direction chosen, not a spec) |
 | **Almond Frame** | Window/widget theming: Openbox themes Light/Dark/Ocean, Qt palettes, LXQt QSS | **IMPLEMENTED** (seen running) | LXQt with Openbox confirmed running; no theme or contrast checks done. "Unified Frame" (integrated headers) is an AALLDM design direction in the owner's notes |
 | Wallpapers, boot artwork, image identity | Branding inside the image | **TESTED (VM)** — partly | Almond boot menus in BIOS and UEFI, `/etc/os-release` = "Almond Linux 0.1 Marcona (AALDM development preview)". Bug: the GRUB title overlaps the logo |
-| **Almond Glass** | AALLDM: right-side application bar, solid/translucent/frosted/clear styles, adjustable position, opacity, size | **PLANNED** — defined in the owner's notes | Part of the AALLDM design in progress. Translucent styles are AALLDM-only: AALDM's rules forbid transparency. Not approved for building ([T-0002](../ai-bridge/tasks/T-0002-confirm-component-definitions.md)) |
-| **Almond Spaces** | AALLDM: workspaces with saved layouts, grouping, previews, multi-monitor, restore | **PLANNED** — defined in the owner's notes | Restore and multi-monitor behaviour still open. Not approved for building (T-0002) |
+| **Almond Glass** | AALLDM: right-side application bar, solid/translucent/frosted/clear styles, adjustable position, opacity, size | **DESIGNED** (part of the approved AALLDM visual design) |  Translucent styles are AALLDM-only: AALDM's rules forbid transparency. Not approved for building ([T-0002](../ai-bridge/tasks/T-0002-confirm-component-definitions.md)) |
+| **Almond Spaces** | AALLDM: workspaces with saved layouts, grouping, previews, multi-monitor, restore | **DESIGNED** (visual only, part of the approved AALLDM design) | Restore and multi-monitor behaviour still open. Not approved for building (T-0002) |
 | **Almond Bridge** | Windows application compatibility manager for **supported** apps (Wine or Proton as possible engines) | **PLANNED** | No engine chosen, no support list. Never promise universal Windows compatibility. Not the same thing as the *Almond AI Bridge* (the developer tooling in `ai-bridge/`). (T-0002) |
 | **Almond Shield** | **Optional** antivirus and security center (scanning, quarantine, warnings) | **PLANNED** — proposal | The base OS must stay secure without it. Today's security defaults: [ARCHITECTURE.md](ARCHITECTURE.md#security-and-lifecycle-boundaries); nftables is installed but has no rules. (T-0002) |
 | **Performance modes** | Presets **Potato / Medium / High**, user-overridable | **PLANNED** — design requirement | No figures exist. Open: do they apply to AALDM? Medium/High include transparency and animation, which AALDM's rules forbid. (T-0002) |
@@ -129,5 +129,6 @@ Generated from `ai-bridge/tasks/` by `ai-bridge/bridge handoff`. Do not edit bet
 
 ## Change log
 
+- 2026-10-18 — Owner decisions: edition names confirmed (D-0002); AALLDM visual design approved, PLANNED → DESIGNED, and with it the look of Almond Glass and Spaces (D-0003). Their behaviour (restore, multi-monitor, styles) still needs a spec.
 - 2026-10-18 — Recorded the 2026-10-17 VM build and boot test: build configuration, ISO, launcher (partly), boot artwork (partly) and memory script moved to TESTED (VM); AALDM edition to TESTED (VM), first boot only. Added the owner's definitions of Glass, Spaces, Bridge, Shield and performance modes from the owner's design notes (the 2026-10-17 entry wrongly said they appeared nowhere: they were in the owner's notes, not in this repository). AALLDM: design in progress, approval to be confirmed by the owner.
 - 2026-10-17 — File created from README, ROADMAP and AALDM-PLAN as of commit 6401433. Glass, Spaces, Bridge, Shield and performance modes added as PLANNED / not specified (they appear in the owner's brief but nowhere in the repository).

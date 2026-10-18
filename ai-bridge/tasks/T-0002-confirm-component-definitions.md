@@ -27,8 +27,8 @@ The owner's design notes (Obsidian vault "Almond Linux", 2026-10-15, from ChatGP
 
 ## Acceptance criteria
 
-- [ ] **Edition names:** the owner confirms the exact expansions (repository: "A All Little Distribution Model" / "A All Large Linux Distribution Model"; an AALLDM prompt in the notes says "…Linux Distro Model")
-- [ ] **AALLDM design:** the owner says whether Fusion V2 / Design 03 is approved. If yes: add the mockup (or a link) and the date, and move it to DESIGNED
+- [x] **Edition names:** the owner confirms the exact expansions (repository: "A All Little Distribution Model" / "A All Large Linux Distribution Model"; an AALLDM prompt in the notes says "…Linux Distro Model")
+- [x] **AALLDM design:** the owner says whether Fusion V2 / Design 03 is approved. If yes: add the mockup (or a link) and the date, and move it to DESIGNED
 - [ ] **Performance modes:** decide whether Potato / Medium / High apply to AALDM (Medium/High add transparency and animation, which AALDM's rules forbid) or only to AALLDM
 - [ ] **Glass, Spaces, Bridge, Shield:** each definition in PROJECT_STATUS.md confirmed or corrected; edition and target version stated
 - [ ] One decision record per decision in `ai-bridge/decisions/` (ChatGPT can write `almond-decision` blocks; `ai-bridge/bridge in` saves them)
@@ -44,3 +44,4 @@ The owner's design notes (Obsidian vault "Almond Linux", 2026-10-15, from ChatGP
 ## Log
 - 2026-10-17 17:40 — created while setting up the Almond AI Bridge
 - 2026-10-18 12:00 — rewritten: the definitions were found in the owner's notes; the task is now to confirm them (Claude, Mac)
+- 2026-10-18 13:00 — owner decided: names = option B (D-0002); AALLDM visual design approved (D-0003). Still open: performance modes scope, Glass/Spaces behaviour, Bridge, Shield; AALLDM mockup images to be added

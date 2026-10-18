@@ -7,6 +7,6 @@ Almond Linux is at a very early stage: one ISO has been built and booted in a VM
 5. **Logo.** The official logo must not be redrawn, recoloured or altered; full-colour logo only on light backgrounds.
 6. **Security.** No secrets in files. No remote-login services. Live-session conveniences (autologin, passwordless sudo) must never become installed-system defaults. Old test hardware: never mount or read internal disks.
 7. **Sensitive paths** (.github/, ai-bridge/config|scripts, auto/, config/hooks, config/package-lists, scripts/build.sh, branding/logo, LICENSE, NOTICE, SECURITY.md, CLAUDE.md, AGENTS.md, and any deletion) need the owner's approval: mention them in `questions_for_owner` if they changed.
-8. **Not approved for building.** Almond Glass, Spaces, Bridge, Shield, performance modes and AALLDM exist only as concepts. Flag any code that builds them without an owner-approved spec.
+8. **Not approved for building.** Almond Glass, Spaces, Bridge, Shield, performance modes and AALLDM software have no approved implementation spec (AALLDM's visual design is approved). Flag any code that builds them without an owner-approved spec.
 9. Severity: `blocker` = breaks the build, security, data safety or honesty; `major` = wrong behaviour or a design-rule break; `minor` = should fix; `nit` = style.
 10. Review only what is in front of you. If you cannot judge something (for example whether it boots), say so in `tests_assessment` instead of guessing.

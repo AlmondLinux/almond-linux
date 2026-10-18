@@ -22,7 +22,7 @@ These rules apply to every review of this repository (Codex reads this section f
 5. **Logo:** never redrawn, recoloured or altered; full-colour logo only on light backgrounds.
 6. **Security:** no secrets in files; no remote-login services; live-session autologin or passwordless sudo must never become installed-system defaults; never mount or read internal disks of test machines (Dell OptiPlex 390).
 7. **Sensitive paths** need the owner's approval: `.github/`, `ai-bridge/config/`, `ai-bridge/scripts/`, `auto/`, `config/hooks/`, `config/package-lists/`, `scripts/build.sh`, `branding/logo/`, `LICENSE`, `NOTICE`, `SECURITY.md`, `CLAUDE.md`, `AGENTS.md`, and any deletion. Point them out.
-8. **Not approved for building:** Almond Glass, Spaces, Bridge, Shield, performance modes and all of AALLDM are defined only as concepts (docs/PROJECT_STATUS.md), without an approved spec. Flag code that builds them.
+8. **Not approved for building:** Almond Glass, Spaces, Bridge, Shield, performance modes and AALLDM software have no approved implementation spec (AALLDM's visual design is approved, D-0003) (docs/PROJECT_STATUS.md), without an approved spec. Flag code that builds them.
 9. Only report what you can see. If you cannot judge something (for example whether the ISO boots), say so instead of guessing.
 
 ## Structured review format (ChatGPT and API reviews)
