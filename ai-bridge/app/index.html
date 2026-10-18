@@ -1,0 +1,1306 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: MIT -->
+<!-- Almond Linux - Almond Duo: local workbench for prompting Claude and Codex together.
+     Served by the local Almond Duo backend on 127.0.0.1. No external resources.
+     Agent text is always inserted with textContent, never as HTML. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="almond-token" content="__ALMOND_TOKEN__">
+<meta name="color-scheme" content="light dark">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>Almond Duo · Almond Linux</title>
+<style>
+:root {
+  --bg: #f6f1e7;
+  --surface: #fdfaf4;
+  --sidebar: #efe8da;
+  --raised: #ffffff;
+  --ink: #26231f;
+  --ink-2: #45403a;
+  --muted: #6e675d;
+  --line: #e1d7c5;
+  --line-strong: #cfc2ab;
+  --copper: #a8612f;
+  --copper-ink: #8a4d24;
+  --copper-soft: #f4e5d6;
+  --blue: #4c6b8a;
+  --blue-ink: #3d5a77;
+  --blue-soft: #e4ebf1;
+  --ok: #4f7350;
+  --warn: #9a6c16;
+  --bad: #a3412b;
+  --bad-soft: #f7e3dc;
+  --focus: #4c6b8a;
+  --shadow: 0 1px 2px rgba(38, 35, 31, .05), 0 6px 20px rgba(38, 35, 31, .05);
+  --radius: 14px;
+  --radius-sm: 9px;
+  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+  --serif: ui-serif, "New York", "Iowan Old Style", Georgia, serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1c1a17;
+    --surface: #22201c;
+    --sidebar: #181613;
+    --raised: #2a2722;
+    --ink: #efe7d9;
+    --ink-2: #d9d0c1;
+    --muted: #a59c8e;
+    --line: #35312b;
+    --line-strong: #4a443b;
+    --copper: #d38b58;
+    --copper-ink: #e2a173;
+    --copper-soft: #3a2b20;
+    --blue: #8eabc7;
+    --blue-ink: #a6bfd8;
+    --blue-soft: #232c35;
+    --ok: #8fb58c;
+    --warn: #d7ad5c;
+    --bad: #e08a74;
+    --bad-soft: #3a231d;
+    --focus: #8eabc7;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .25), 0 8px 24px rgba(0, 0, 0, .2);
+  }
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 15px/1.55 var(--sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+button, textarea, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 6px; }
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+[hidden] { display: none !important; }
+
+/* ---------- layout ---------- */
+.app {
+  display: grid;
+  grid-template-columns: 288px minmax(0, 1fr);
+  height: 100vh;
+  height: 100dvh;
+}
+.sidebar {
+  background: var(--sidebar);
+  border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: var(--surface);
+}
+
+/* ---------- sidebar ---------- */
+.brand { padding: 22px 20px 14px; }
+.brand h1 {
+  margin: 0;
+  font: 600 20px/1.2 var(--serif);
+  letter-spacing: -.01em;
+}
+.brand h1 span { color: var(--copper); }
+.brand p { margin: 3px 0 0; color: var(--muted); font-size: 13px; }
+.brand p b { color: var(--ink-2); font-weight: 600; }
+.new-btn {
+  margin: 4px 16px 14px;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 10px 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--raised);
+  font-weight: 600; font-size: 14px;
+  box-shadow: 0 1px 1px rgba(0,0,0,.03);
+  transition: border-color .15s, background .15s;
+}
+.new-btn:hover { border-color: var(--copper); }
+.new-btn svg { width: 15px; height: 15px; }
+
+.section-label {
+  margin: 14px 20px 6px;
+  font-size: 11px; font-weight: 650;
+  letter-spacing: .08em; text-transform: uppercase;
+  color: var(--muted);
+}
+.connections { padding: 0 12px; display: grid; gap: 4px; }
+.conn {
+  display: grid;
+  grid-template-columns: 10px 1fr;
+  column-gap: 10px;
+  align-items: baseline;
+  padding: 7px 8px;
+  border-radius: 8px;
+}
+.conn .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--line-strong); transform: translateY(-1px); }
+.conn[data-state="ready"] .dot { background: var(--ok); }
+.conn[data-state="signin"] .dot { background: var(--warn); }
+.conn[data-state="missing"] .dot { background: var(--bad); }
+.conn .name { font-weight: 600; font-size: 14px; }
+.conn .name small { font-weight: 500; color: var(--muted); font-size: 12.5px; margin-left: 6px; }
+.conn .detail { grid-column: 2; color: var(--muted); font-size: 12px; line-height: 1.4; overflow-wrap: anywhere; }
+
+.lists { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 12px; }
+.job-list, .hist-list { list-style: none; margin: 0; padding: 0 10px; display: grid; gap: 2px; }
+.item {
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  border-radius: 9px;
+  padding: 8px 10px;
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr);
+  column-gap: 10px;
+  align-items: baseline;
+  transition: background .12s;
+}
+.item:hover { background: rgba(127, 110, 85, .09); }
+.item[aria-current="true"] { background: var(--raised); box-shadow: var(--shadow); }
+.item .sdot { width: 7px; height: 7px; border-radius: 50%; background: var(--line-strong); transform: translateY(-1px); }
+.item .title {
+  font-size: 13.5px; font-weight: 550;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.item .meta { grid-column: 2; font-size: 11.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.item.child .title::before { content: "↳ "; color: var(--muted); }
+.hist-list .item { grid-template-columns: minmax(0, 1fr); }
+.hist-list .item .meta, .hist-list .item .title { grid-column: 1; }
+.list-empty { margin: 2px 20px 8px; color: var(--muted); font-size: 12.5px; }
+
+.s-queued, .s-running { --s: var(--blue); }
+.s-completed { --s: var(--ok); }
+.s-needs-owner { --s: var(--copper); }
+.s-failed, .s-interrupted { --s: var(--bad); }
+.s-stopped { --s: var(--muted); }
+.item .sdot[class*="s-"] { background: var(--s); }
+.s-running.sdot, .pill.s-running .pdot { animation: breathe 1.8s ease-in-out infinite; }
+@keyframes breathe { 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+.side-note {
+  border-top: 1px solid var(--line);
+  padding: 12px 20px 16px;
+  font-size: 12px; color: var(--muted); line-height: 1.5;
+}
+
+/* ---------- top bar ---------- */
+.topbar {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 28px;
+  border-bottom: 1px solid var(--line);
+  min-height: 62px;
+}
+.menu-btn {
+  display: none;
+  border: 1px solid var(--line-strong); background: var(--raised);
+  border-radius: 8px; padding: 6px 8px; line-height: 0;
+}
+.menu-btn svg { width: 18px; height: 18px; }
+.heading { min-width: 0; flex: 1; }
+.heading h2 {
+  margin: 0; font-size: 15.5px; font-weight: 650;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.heading .sub { margin-top: 1px; font-size: 12.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.heading .sub button {
+  border: 0; background: none; padding: 0; color: var(--blue-ink);
+  text-decoration: underline; text-underline-offset: 2px; font-size: inherit;
+}
+.pill {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 4px 11px; border-radius: 999px;
+  font-size: 12.5px; font-weight: 600;
+  background: var(--raised); border: 1px solid var(--line);
+  white-space: nowrap;
+}
+.pill .pdot { width: 7px; height: 7px; border-radius: 50%; background: var(--s, var(--muted)); }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 13px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line-strong);
+  background: var(--raised);
+  font-size: 13px; font-weight: 600;
+  white-space: nowrap;
+  transition: border-color .15s, background .15s, color .15s;
+}
+.btn:hover:not(:disabled) { border-color: var(--blue); }
+.btn:disabled { opacity: .55; }
+.btn[aria-expanded="true"] { background: var(--blue-soft); border-color: var(--blue); color: var(--blue-ink); }
+.btn.danger { color: var(--bad); }
+.btn.danger:hover:not(:disabled) { border-color: var(--bad); background: var(--bad-soft); }
+
+/* ---------- details ---------- */
+.details {
+  border-bottom: 1px solid var(--line);
+  background: var(--bg);
+  padding: 16px 28px 18px;
+  max-height: 46vh; overflow-y: auto;
+}
+.details dl {
+  display: grid; grid-template-columns: max-content minmax(0, 1fr);
+  gap: 6px 18px; margin: 0 0 14px; font-size: 13px;
+}
+.details dt { color: var(--muted); }
+.details dd { margin: 0; font-family: var(--mono); font-size: 12.5px; overflow-wrap: anywhere; }
+.details h3 { margin: 0 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.log {
+  margin: 0;
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  max-height: 260px; overflow: auto;
+  font: 12px/1.5 var(--mono);
+  white-space: pre-wrap; overflow-wrap: anywhere;
+}
+
+/* ---------- feed ---------- */
+.feed-wrap { position: relative; flex: 1; min-height: 0; }
+.feed {
+  height: 100%;
+  overflow-y: auto;
+  scroll-behavior: auto;
+  padding: 28px 28px 36px;
+}
+.feed-inner { max-width: 820px; margin: 0 auto; display: grid; gap: 18px; }
+
+.welcome { max-width: 720px; margin: 7vh auto 0; text-align: center; }
+.welcome h2 {
+  margin: 0 0 10px;
+  font: 600 32px/1.2 var(--serif);
+  letter-spacing: -.015em;
+}
+.welcome h2 em { font-style: normal; color: var(--copper); }
+.welcome > p { margin: 0 auto 28px; max-width: 560px; color: var(--muted); font-size: 15.5px; }
+.how {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;
+  text-align: left; margin-bottom: 26px;
+}
+.how div {
+  border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 14px 16px; background: var(--raised);
+}
+.how b { display: block; font-size: 14px; margin-bottom: 2px; }
+.how span { font-size: 13px; color: var(--muted); }
+.samples-label { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0 0 10px; font-weight: 650; }
+.samples { display: grid; gap: 10px; text-align: left; }
+.sample {
+  border: 1px solid var(--line); background: var(--surface);
+  border-radius: var(--radius); padding: 13px 16px;
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 14px; align-items: center;
+  transition: border-color .15s, transform .15s;
+}
+.sample:hover { border-color: var(--copper); }
+.sample .t { font-size: 14.5px; font-weight: 550; }
+.sample .m { font-size: 12px; color: var(--muted); }
+.sample .use { grid-row: 1 / span 2; grid-column: 2; font-size: 12.5px; color: var(--copper-ink); font-weight: 600; }
+
+.msg {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--raised);
+  box-shadow: var(--shadow);
+  padding: 14px 18px 16px;
+  border-left: 3px solid var(--accent, var(--line-strong));
+  min-width: 0;
+}
+.msg header {
+  display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px;
+  margin-bottom: 8px;
+}
+.msg .who { font-weight: 700; font-size: 14px; color: var(--accent-ink, var(--ink)); }
+.msg .to { font-size: 13px; color: var(--muted); }
+.msg .step {
+  font-size: 11.5px; font-weight: 600; letter-spacing: .02em;
+  padding: 1px 8px; border-radius: 999px;
+  background: var(--accent-soft, var(--bg)); color: var(--accent-ink, var(--ink-2));
+}
+.msg time { margin-left: auto; font-size: 12px; color: var(--muted); white-space: nowrap; }
+.msg .body { font-size: 15px; line-height: 1.62; color: var(--ink); overflow-wrap: anywhere; }
+.msg .body .para { white-space: pre-wrap; margin: 0; }
+.msg .body .para + .para, .msg .body pre + .para, .msg .body .para + pre { margin-top: 10px; }
+.msg .body pre {
+  margin: 0;
+  background: var(--bg); border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 11px 13px;
+  font: 12.5px/1.55 var(--mono);
+  white-space: pre-wrap; overflow-wrap: anywhere;
+}
+.msg--claude { --accent: var(--copper); --accent-ink: var(--copper-ink); --accent-soft: var(--copper-soft); }
+.msg--codex { --accent: var(--blue); --accent-ink: var(--blue-ink); --accent-soft: var(--blue-soft); }
+.msg--you {
+  --accent: var(--ink-2);
+  background: var(--bg);
+  box-shadow: none;
+  margin-left: 10%;
+}
+.msg--checks { --accent: var(--muted); box-shadow: none; background: var(--surface); }
+.msg--checks .body { font: 12.5px/1.55 var(--mono); }
+.msg--checks .body .para { white-space: pre-wrap; }
+.msg--system { --accent: var(--line-strong); box-shadow: none; }
+.msg--transcript .body .para { font-size: 14.5px; }
+
+.notice {
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  font-size: 14px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--ink-2);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.notice b { display: block; margin-bottom: 2px; }
+.notice.bad { background: var(--bad-soft); border-color: transparent; color: var(--bad); }
+.notice.owner { background: var(--copper-soft); border-color: transparent; color: var(--copper-ink); }
+.waiting { text-align: center; color: var(--muted); font-size: 13.5px; padding: 6px 0; }
+
+.jump {
+  position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%);
+  border: 1px solid var(--line-strong); background: var(--raised);
+  border-radius: 999px; padding: 6px 14px; font-size: 12.5px; font-weight: 600;
+  box-shadow: var(--shadow);
+}
+
+/* ---------- banner ---------- */
+.banner {
+  margin: 0; padding: 9px 28px; font-size: 13px;
+  background: var(--bad-soft); color: var(--bad); border-bottom: 1px solid var(--line);
+}
+
+/* ---------- composer ---------- */
+.composer-wrap { padding: 0 28px 10px; }
+.composer {
+  max-width: 820px; margin: 0 auto;
+  border: 1px solid var(--line-strong);
+  border-radius: 18px;
+  background: var(--raised);
+  box-shadow: var(--shadow);
+  padding: 10px 12px 10px;
+  transition: border-color .15s;
+}
+.composer:focus-within { border-color: var(--blue); }
+.followup {
+  display: flex; align-items: center; gap: 8px;
+  margin: 2px 4px 8px;
+  font-size: 12.5px; color: var(--blue-ink);
+}
+.followup .chip {
+  display: inline-flex; align-items: center; gap: 6px; min-width: 0;
+  background: var(--blue-soft); border-radius: 999px; padding: 3px 4px 3px 11px;
+}
+.followup .chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 46ch; }
+.followup .chip button {
+  border: 0; background: transparent; border-radius: 999px; width: 22px; height: 22px; line-height: 1;
+  color: inherit; font-size: 14px;
+}
+.followup .chip button:hover { background: rgba(76, 107, 138, .15); }
+.composer textarea {
+  display: block; width: 100%;
+  border: 0; outline: none; resize: none;
+  background: transparent;
+  padding: 6px 6px 8px;
+  font-size: 15.5px; line-height: 1.55;
+  min-height: 52px; max-height: 260px;
+}
+.composer textarea::placeholder { color: var(--muted); }
+.composer textarea:focus-visible { outline: none; }
+.composer-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.modes {
+  display: inline-flex; padding: 3px; gap: 2px;
+  border-radius: 11px; background: var(--bg); border: 1px solid var(--line);
+  margin: 0; min-width: 0;
+}
+.modes legend { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.modes label {
+  position: relative;
+  padding: 5px 12px; border-radius: 8px;
+  font-size: 13px; font-weight: 600; color: var(--muted);
+  cursor: pointer; white-space: nowrap;
+}
+.modes input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.modes label:has(input:checked) { background: var(--raised); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.modes label:has(input:focus-visible) { outline: 2px solid var(--focus); outline-offset: 1px; }
+.mode-hint { flex: 1; min-width: 160px; font-size: 12.5px; color: var(--muted); line-height: 1.4; }
+.send {
+  margin-left: auto;
+  display: inline-flex; align-items: center; gap: 8px;
+  border: 0; border-radius: 11px;
+  padding: 8px 16px;
+  background: var(--ink); color: var(--surface);
+  font-weight: 650; font-size: 14px;
+  transition: opacity .15s, background .15s;
+}
+.send:hover:not(:disabled) { background: var(--copper-ink); }
+.send:disabled { opacity: .4; }
+.send kbd { font: 500 11.5px var(--sans); opacity: .7; }
+.form-msg { max-width: 820px; margin: 8px auto 0; font-size: 13px; color: var(--muted); min-height: 1.2em; }
+.form-msg.bad { color: var(--bad); }
+.viewonly {
+  max-width: 820px; margin: 0 auto;
+  display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;
+  border: 1px dashed var(--line-strong); border-radius: 16px;
+  padding: 14px 18px; color: var(--muted); font-size: 14px;
+}
+
+.footer {
+  padding: 6px 28px 14px; text-align: center;
+  font-size: 12px; color: var(--muted);
+}
+
+/* ---------- responsive ---------- */
+.backdrop { display: none; }
+@media (max-width: 860px) {
+  .app { grid-template-columns: minmax(0, 1fr); }
+  .sidebar {
+    position: fixed; inset: 0 auto 0 0; width: min(300px, 86vw); z-index: 20;
+    transform: translateX(-102%); transition: transform .2s ease;
+    box-shadow: var(--shadow);
+  }
+  body.nav-open .sidebar { transform: none; }
+  body.nav-open .backdrop { display: block; position: fixed; inset: 0; background: rgba(20, 18, 15, .35); z-index: 15; }
+  .menu-btn { display: inline-flex; }
+  .topbar, .details, .feed, .composer-wrap, .footer, .banner { padding-left: 16px; padding-right: 16px; }
+  .topbar { flex-wrap: wrap; }
+  .how { grid-template-columns: minmax(0, 1fr); }
+  .welcome h2 { font-size: 26px; }
+  .msg--you { margin-left: 0; }
+  .mode-hint { order: 3; flex-basis: 100%; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar" aria-label="Conversations and connections">
+    <div class="brand">
+      <h1>Almond <span>Duo</span></h1>
+      <p>Claude and Codex on <b id="project-name">Almond Linux</b></p>
+    </div>
+    <button type="button" class="new-btn" id="new-btn">
+      <svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>
+      New conversation
+    </button>
+
+    <div class="section-label" id="conn-label">Agents</div>
+    <div class="connections" role="list" aria-labelledby="conn-label">
+      <div class="conn" role="listitem" id="conn-claude" data-state="unknown">
+        <span class="dot" aria-hidden="true"></span>
+        <span class="name">Claude <small class="state">Checking…</small></span>
+        <span class="detail"></span>
+      </div>
+      <div class="conn" role="listitem" id="conn-codex" data-state="unknown">
+        <span class="dot" aria-hidden="true"></span>
+        <span class="name">Codex <small class="state">Checking…</small></span>
+        <span class="detail"></span>
+      </div>
+    </div>
+
+    <nav class="lists" aria-label="Conversation history">
+      <div class="section-label" id="jobs-label">Conversations</div>
+      <ul class="job-list" id="job-list" aria-labelledby="jobs-label"></ul>
+      <p class="list-empty" id="jobs-empty">Nothing yet. Your conversations will appear here.</p>
+      <div id="hist-section" hidden>
+        <div class="section-label" id="hist-label">Earlier transcripts</div>
+        <ul class="hist-list" id="hist-list" aria-labelledby="hist-label"></ul>
+      </div>
+    </nav>
+
+    <div class="side-note">
+      Both agents share the Almond Linux project context. Conversations are saved locally on this Mac and run on your signed-in Claude and Codex command-line plans.
+    </div>
+  </aside>
+  <div class="backdrop" id="backdrop"></div>
+
+  <main class="main" id="main">
+    <div class="topbar">
+      <button type="button" class="menu-btn" id="menu-btn" aria-label="Show conversations" aria-controls="sidebar" aria-expanded="false">
+        <svg viewBox="0 0 18 18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3 5h12M3 9h12M3 13h12"/></svg>
+      </button>
+      <div class="heading">
+        <h2 id="view-title">New conversation</h2>
+        <div class="sub" id="view-sub">Ask Claude and Codex something about Almond Linux.</div>
+      </div>
+      <span class="pill" id="status-pill" hidden><span class="pdot" aria-hidden="true"></span><span id="status-text"></span></span>
+      <div class="actions" id="view-actions" hidden>
+        <button type="button" class="btn" id="details-btn" aria-expanded="false" aria-controls="details">Details</button>
+        <button type="button" class="btn" id="download-btn">Download transcript</button>
+        <button type="button" class="btn danger" id="stop-btn" hidden>Stop</button>
+      </div>
+    </div>
+
+    <p class="banner" id="banner" role="alert" hidden></p>
+
+    <section class="details" id="details" aria-label="Job details" hidden>
+      <dl id="details-list"></dl>
+      <div id="log-section">
+        <h3>Log</h3>
+        <pre class="log" id="log" tabindex="0" aria-label="Job log"></pre>
+      </div>
+    </section>
+
+    <div class="feed-wrap">
+      <div class="feed" id="feed">
+        <div class="feed-inner" id="feed-inner" role="log" aria-label="Conversation" aria-live="polite" aria-relevant="additions"></div>
+
+        <section class="welcome" id="welcome" aria-labelledby="welcome-title">
+          <h2 id="welcome-title">Two minds on <em>Almond Linux</em></h2>
+          <p>Write one prompt. Claude and Codex both see the project and answer here, in their own words, with every step visible.</p>
+          <div class="how">
+            <div><b>Ask both</b><span>Read-only. Each answers on its own at the same time, then they reply to each other.</span></div>
+            <div><b>Build together</b><span>One plans, the other reviews the plan, then they implement, run checks and review the change.</span></div>
+          </div>
+          <p class="samples-label" id="samples-label">Try one of these</p>
+          <div class="samples" id="samples" role="group" aria-labelledby="samples-label"></div>
+        </section>
+      </div>
+      <button type="button" class="jump" id="jump" hidden>New messages ↓</button>
+    </div>
+
+    <div class="composer-wrap" id="composer-wrap">
+      <form class="composer" id="composer" novalidate>
+        <div class="followup" id="followup" hidden>
+          <span class="chip"><span id="followup-text"></span><button type="button" id="followup-clear" aria-label="Start a new conversation instead of a follow-up" title="Start fresh instead">×</button></span>
+        </div>
+        <label for="prompt" class="sr-only">Prompt for Claude and Codex</label>
+        <textarea id="prompt" rows="2" placeholder="Ask Claude and Codex about Almond Linux…" aria-describedby="form-msg mode-hint"></textarea>
+        <div class="composer-row">
+          <fieldset class="modes" id="modes">
+            <legend>Mode</legend>
+            <label><input type="radio" name="mode" value="ask" checked> Ask both</label>
+            <label><input type="radio" name="mode" value="build"> Build together</label>
+          </fieldset>
+          <span class="mode-hint" id="mode-hint"></span>
+          <button type="submit" class="send" id="send">
+            <span id="send-label">Send</span><kbd id="send-kbd" aria-hidden="true">⌘↵</kbd>
+          </button>
+        </div>
+      </form>
+      <div class="viewonly" id="viewonly" hidden>
+        <span>This is an earlier transcript and is view-only.</span>
+        <button type="button" class="btn" id="viewonly-new">New conversation</button>
+      </div>
+      <p class="form-msg" id="form-msg" role="status" aria-live="polite"></p>
+    </div>
+
+    <footer class="footer">
+      Almond Duo never pushes, merges or publishes anything. Changes stay local until you review and approve them yourself.
+    </footer>
+  </main>
+</div>
+<div class="sr-only" id="announce" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  var TOKEN = (document.querySelector('meta[name="almond-token"]') || {}).content || "";
+  var POLL_MS = 1500;
+  var FINISHED = { completed: 1, "needs-owner": 1, failed: 1, stopped: 1, interrupted: 1 };
+  var STATUS_LABEL = {
+    queued: "Queued", running: "Running", completed: "Completed", "needs-owner": "Needs you",
+    failed: "Failed", stopped: "Stopped", interrupted: "Interrupted"
+  };
+  var MODE_LABEL = { ask: "Ask both", build: "Build together" };
+  var MODE_HINT = {
+    ask: "Read-only. Both answer at the same time, then reply to each other.",
+    build: "Plan, review the plan, implement, check and review. Nothing is pushed or merged."
+  };
+  var SAMPLES = [
+    { mode: "ask", text: "Read docs/DESIGN_RULES.md and docs/PROJECT_STATUS.md. Which component is closest to its next status rung, and what evidence is still missing?" },
+    { mode: "ask", text: "What is the smallest next step to get the amd64 ISO building on the Windows PC described in docs/PC-SETUP.md? Point out anything unclear for a first-time builder." },
+    { mode: "build", text: "Make docs/PC-SETUP.md easier for a first-time builder to follow, without changing what it asks them to do." }
+  ];
+
+  // ---------- state ----------
+  var state = null;            // last /api/state
+  var view = { kind: "new" };  // {kind:"new"} | {kind:"job", id} | {kind:"history", id}
+  var job = null;              // last /api/jobs/<id> for the selected job
+  var historyDoc = null;       // last /api/history/<id>
+  var parentId = null;         // follow-up target (finished job id) or null
+  var sending = false;
+  var stopping = false;
+  var viewSeq = 0;             // discards responses for a view the user has left
+  var rendered = {};           // message id -> {body, el}
+  var listSig = "";
+  var histSig = "";
+  var lastStatus = {};
+  var connectionOk = true;
+
+  var $ = function (id) { return document.getElementById(id); };
+  var isMac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+  $("send-kbd").textContent = isMac ? "⌘↵" : "Ctrl↵";
+
+  // ---------- helpers ----------
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = String(text);
+    return n;
+  }
+  function clear(n) { while (n.firstChild) n.removeChild(n.firstChild); }
+  function fmtTime(sec, withDate) {
+    if (!sec) return "";
+    var d = new Date(sec * 1000);
+    if (isNaN(d.getTime())) return "";
+    var today = new Date();
+    var sameDay = d.toDateString() === today.toDateString();
+    var t = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    if (sameDay && !withDate) return t;
+    return d.toLocaleDateString([], { month: "short", day: "numeric", year: d.getFullYear() === today.getFullYear() ? undefined : "numeric" }) + ", " + t;
+  }
+  function firstLine(s, max) {
+    s = String(s || "").replace(/\s+/g, " ").trim();
+    max = max || 80;
+    return s.length > max ? s.slice(0, max - 1) + "…" : (s || "Untitled");
+  }
+  function isFinished(j) { return !!(j && FINISHED[j.status]); }
+  function findJob(id) {
+    if (!state || !state.jobs) return null;
+    for (var i = 0; i < state.jobs.length; i++) if (state.jobs[i].id === id) return state.jobs[i];
+    return null;
+  }
+  function anyActive() { return !!(state && state.active && state.active.length); }
+
+  function api(path, opts) {
+    opts = opts || {};
+    var init = { method: opts.method || "GET", headers: { "X-Almond-Token": TOKEN }, cache: "no-store" };
+    if (opts.body !== undefined) {
+      init.headers["Content-Type"] = "application/json";
+      init.body = JSON.stringify(opts.body);
+    }
+    return fetch(path, init).then(function (res) {
+      var ct = res.headers.get("Content-Type") || "";
+      var p = (opts.text && res.ok) ? res.text() : (ct.indexOf("json") >= 0 ? res.json().catch(function () { return {}; }) : res.text());
+      return p.then(function (data) {
+        if (!res.ok) {
+          var msg = (data && typeof data === "object" && data.error) ? data.error : ("The local service answered " + res.status + ".");
+          var e = new Error(msg); e.status = res.status; throw e;
+        }
+        return data;
+      });
+    });
+  }
+
+  function speakerKind(s) {
+    s = String(s || "").toLowerCase();
+    if (s.indexOf("claude") >= 0) return "claude";
+    if (s.indexOf("codex") >= 0) return "codex";
+    if (s === "you" || s === "owner" || s === "user" || s.indexOf("owner") >= 0) return "you";
+    if (s.indexOf("check") >= 0) return "checks";
+    return "system";
+  }
+  function displayName(s) {
+    var k = speakerKind(s);
+    if (k === "claude") return "Claude";
+    if (k === "codex") return "Codex";
+    if (k === "you") return "You";
+    if (k === "checks") return "Checks";
+    s = String(s || "").trim();
+    return s ? s.charAt(0).toUpperCase() + s.slice(1) : "System";
+  }
+  function recipient(to) {
+    var t = String(to || "").trim();
+    if (!t) return "";
+    var l = t.toLowerCase();
+    if (l === "all" || l === "both" || l === "everyone") return "to everyone";
+    if ((l.indexOf("claude") >= 0 && l.indexOf("codex") >= 0)) return "to Claude & Codex";
+    return "to " + displayName(t);
+  }
+
+  // Plain text body; ``` fences become monospace blocks. All via textContent.
+  function renderBody(container, text) {
+    clear(container);
+    var lines = String(text == null ? "" : text).replace(/\r\n?/g, "\n").split("\n");
+    var buf = [], inCode = false;
+    function flush() {
+      while (buf.length && !inCode && !buf[0].trim()) buf.shift();
+      while (buf.length && !inCode && !buf[buf.length - 1].trim()) buf.pop();
+      if (!buf.length) { buf = []; return; }
+      if (inCode) {
+        var pre = el("pre"); pre.appendChild(el("code", null, buf.join("\n"))); container.appendChild(pre);
+      } else {
+        // blank-line separated paragraphs keep their own internal line breaks
+        var chunk = [], i;
+        for (i = 0; i <= buf.length; i++) {
+          if (i === buf.length || !buf[i].trim()) {
+            if (chunk.length) container.appendChild(el("p", "para", chunk.join("\n")));
+            chunk = [];
+          } else chunk.push(buf[i]);
+        }
+      }
+      buf = [];
+    }
+    for (var i = 0; i < lines.length; i++) {
+      if (/^\s*```/.test(lines[i])) { flush(); inCode = !inCode; continue; }
+      buf.push(lines[i]);
+    }
+    flush();
+    if (!container.firstChild) container.appendChild(el("p", "para", ""));
+  }
+
+  function messageCard(m) {
+    var kind = speakerKind(m.speaker);
+    var card = el("article", "msg msg--" + kind);
+    var head = el("header");
+    head.appendChild(el("span", "who", displayName(m.speaker)));
+    var to = recipient(m.to);
+    if (to) head.appendChild(el("span", "to", to));
+    if (m.step) head.appendChild(el("span", "step", m.step));
+    var when = fmtTime(m.created);
+    if (when) {
+      var t = el("time", null, when);
+      t.dateTime = new Date(m.created * 1000).toISOString();
+      t.title = fmtTime(m.created, true);
+      head.appendChild(t);
+    }
+    card.appendChild(head);
+    var body = el("div", "body");
+    renderBody(body, m.body);
+    card.appendChild(body);
+    card.setAttribute("aria-label", displayName(m.speaker) + (to ? " " + to : "") + (m.step ? ", " + m.step : ""));
+    return card;
+  }
+
+  // ---------- scrolling ----------
+  var feed = $("feed");
+  function nearBottom() { return feed.scrollHeight - feed.scrollTop - feed.clientHeight < 90; }
+  function toBottom() { feed.scrollTop = feed.scrollHeight; $("jump").hidden = true; }
+  feed.addEventListener("scroll", function () { if (nearBottom()) $("jump").hidden = true; });
+  $("jump").addEventListener("click", toBottom);
+
+  // ---------- sidebar ----------
+  function renderConnections() {
+    var c = (state && state.connections) || {};
+    ["claude", "codex"].forEach(function (name) {
+      var box = $("conn-" + name), info = c[name];
+      var st = "unknown", label = "Checking…";
+      if (info) {
+        if (!info.available) { st = "missing"; label = "Not found"; }
+        else if (!info.authenticated) { st = "signin"; label = "Sign-in needed"; }
+        else { st = "ready"; label = "Ready"; }
+      } else if (state) { st = "missing"; label = "Unknown"; }
+      box.setAttribute("data-state", st);
+      box.querySelector(".state").textContent = label;
+      box.querySelector(".detail").textContent = (info && info.message) ? info.message : "";
+    });
+  }
+
+  function renderProject() {
+    var p = state && state.project, name = "Almond Linux", title = "";
+    if (typeof p === "string" && p) { title = p; }
+    else if (p && typeof p === "object") { name = p.name || name; title = p.path || p.root || ""; }
+    var n = $("project-name");
+    n.textContent = name;
+    n.title = title;
+  }
+
+  function renderJobList() {
+    var jobs = ((state && state.jobs) || []).slice().sort(function (a, b) { return (b.created || 0) - (a.created || 0); });
+    var sel = view.kind === "job" ? view.id : "";
+    var sig = sel + "|" + JSON.stringify(jobs.map(function (j) { return [j.id, j.status, j.stage, j.prompt, j.parent_id, j.mode]; }));
+    if (sig === listSig) return;
+    listSig = sig;
+    var ul = $("job-list");
+    clear(ul);
+    $("jobs-empty").hidden = jobs.length > 0;
+    jobs.forEach(function (j) {
+      var li = el("li");
+      var b = el("button", "item" + (j.parent_id ? " child" : ""));
+      b.type = "button";
+      b.setAttribute("aria-current", j.id === sel ? "true" : "false");
+      b.appendChild(el("span", "sdot s-" + j.status));
+      b.appendChild(el("span", "title", firstLine(j.prompt, 70)));
+      var meta = (MODE_LABEL[j.mode] || j.mode || "") + " · " + (STATUS_LABEL[j.status] || j.status || "") + " · " + fmtTime(j.created);
+      b.appendChild(el("span", "meta", meta));
+      b.title = String(j.prompt || "");
+      b.addEventListener("click", function () { selectJob(j.id); });
+      li.appendChild(b);
+      ul.appendChild(li);
+    });
+  }
+
+  function renderHistoryList() {
+    var hist = (state && state.history) || [];
+    var sel = view.kind === "history" ? view.id : "";
+    var sig = sel + "|" + JSON.stringify(hist.map(function (h) { return [h.id, h.title]; }));
+    if (sig === histSig) return;
+    histSig = sig;
+    $("hist-section").hidden = hist.length === 0;
+    var ul = $("hist-list");
+    clear(ul);
+    hist.forEach(function (h) {
+      var li = el("li");
+      var b = el("button", "item");
+      b.type = "button";
+      b.setAttribute("aria-current", h.id === sel ? "true" : "false");
+      b.appendChild(el("span", "title", firstLine(h.title || h.id, 70)));
+      b.appendChild(el("span", "meta", "View-only transcript"));
+      b.title = String(h.title || h.id);
+      b.addEventListener("click", function () { selectHistory(h.id); });
+      li.appendChild(b);
+      ul.appendChild(li);
+    });
+  }
+
+  // ---------- main view ----------
+  function setPill(status) {
+    var pill = $("status-pill");
+    if (!status) { pill.hidden = true; return; }
+    pill.hidden = false;
+    pill.className = "pill s-" + status;
+    $("status-text").textContent = STATUS_LABEL[status] || status;
+  }
+
+  function renderHeader() {
+    var title = $("view-title"), sub = $("view-sub");
+    clear(sub);
+    title.title = "";
+    $("view-actions").hidden = view.kind === "new";
+    $("stop-btn").hidden = true;
+    $("details-btn").hidden = view.kind !== "job";
+    if (view.kind !== "job") { $("details").hidden = true; $("details-btn").setAttribute("aria-expanded", "false"); }
+
+    if (view.kind === "new") {
+      title.textContent = "New conversation";
+      sub.textContent = "Ask Claude and Codex something about Almond Linux.";
+      setPill(null);
+      return;
+    }
+    if (view.kind === "history") {
+      title.textContent = historyDoc ? firstLine(historyDoc.title || view.id, 120) : "Loading transcript…";
+      sub.textContent = "Earlier transcript · view only";
+      setPill(null);
+      return;
+    }
+    var j = job || findJob(view.id);
+    if (!j) { title.textContent = "Loading…"; setPill(null); return; }
+    title.textContent = firstLine(j.prompt, 140);
+    title.title = String(j.prompt || "");
+    var parts = [MODE_LABEL[j.mode] || j.mode];
+    if (j.stage) parts.push(j.stage);
+    sub.appendChild(document.createTextNode(parts.join(" · ")));
+    if (j.parent_id) {
+      var parent = findJob(j.parent_id);
+      sub.appendChild(document.createTextNode(" · follow-up to "));
+      var link = el("button", null, parent ? "“" + firstLine(parent.prompt, 40) + "”" : j.parent_id);
+      link.type = "button";
+      link.addEventListener("click", function () { selectJob(j.parent_id); });
+      sub.appendChild(link);
+    }
+    setPill(j.status);
+    var active = j.status === "queued" || j.status === "running";
+    var stop = $("stop-btn");
+    stop.hidden = !active;
+    stop.disabled = stopping;
+    stop.textContent = stopping ? "Stopping…" : "Stop";
+  }
+
+  function renderDetails() {
+    if (view.kind !== "job" || !job) return;
+    var dl = $("details-list");
+    clear(dl);
+    var rows = [
+      ["Job", job.id],
+      ["Mode", MODE_LABEL[job.mode] || job.mode],
+      ["Status", STATUS_LABEL[job.status] || job.status],
+      ["Stage", job.stage],
+      ["Started", fmtTime(job.created, true)],
+      ["Updated", fmtTime(job.updated, true)],
+      ["Workspace", job.workspace],
+      ["Follow-up to", job.parent_id],
+      ["Error", job.error]
+    ];
+    rows.forEach(function (r) {
+      if (r[1] == null || r[1] === "") return;
+      dl.appendChild(el("dt", null, r[0]));
+      dl.appendChild(el("dd", null, r[1]));
+    });
+    var log = $("log"), text = String(job.log || "");
+    $("log-section").hidden = !text;
+    if (log.textContent !== text) {
+      var atEnd = log.scrollHeight - log.scrollTop - log.clientHeight < 30;
+      log.textContent = text;
+      if (atEnd) log.scrollTop = log.scrollHeight;
+    }
+  }
+
+  function resetFeed() {
+    clear($("feed-inner"));
+    rendered = {};
+    $("jump").hidden = true;
+  }
+
+  function renderJobFeed(initial) {
+    var inner = $("feed-inner");
+    var stick = initial || nearBottom();
+    var added = false;
+    var msgs = (job && job.messages) || [];
+    var hasOwner = msgs.some(function (m) { return speakerKind(m.speaker) === "you"; });
+
+    // The job's own prompt, shown as the owner's opening message unless the backend already recorded one.
+    if (job && !hasOwner && !rendered.__prompt) {
+      var pc = messageCard({ speaker: "You", to: "Claude & Codex", step: MODE_LABEL[job.mode] || "", body: job.prompt, created: job.created });
+      inner.insertBefore(pc, inner.firstChild);
+      rendered.__prompt = { el: pc, body: job.prompt };
+    } else if (hasOwner && rendered.__prompt) {
+      inner.removeChild(rendered.__prompt.el);
+      delete rendered.__prompt;
+    }
+
+    var tail = $("feed-tail");
+    msgs.forEach(function (m, i) {
+      var key = "m:" + (m.id != null ? m.id : i);
+      var r = rendered[key];
+      if (r) {
+        if (r.body !== m.body) { renderBody(r.el.querySelector(".body"), m.body); r.body = m.body; }
+        return;
+      }
+      var card = messageCard(m);
+      if (tail) inner.insertBefore(card, tail); else inner.appendChild(card);
+      rendered[key] = { el: card, body: m.body };
+      added = true;
+    });
+
+    // Status-derived footer: real job state only, no simulated progress.
+    if (tail) inner.removeChild(tail);
+    tail = el("div");
+    tail.id = "feed-tail";
+    tail.setAttribute("aria-live", "off");
+    if (job) {
+      if (job.error) {
+        var e = el("div", "notice bad");
+        e.appendChild(el("b", null, job.status === "failed" ? "This job failed" : "Problem reported"));
+        e.appendChild(document.createTextNode(job.error));
+        tail.appendChild(e);
+      }
+      if (job.status === "needs-owner") {
+        var n = el("div", "notice owner");
+        n.appendChild(el("b", null, "Your decision is needed"));
+        n.appendChild(document.createTextNode("Claude and Codex stopped here for you. Read the last messages, open Details for the workspace and log, then send a follow-up or decide yourself."));
+        tail.appendChild(n);
+      } else if (job.status === "stopped") {
+        tail.appendChild(el("div", "notice", "This job was stopped."));
+      } else if (job.status === "interrupted") {
+        tail.appendChild(el("div", "notice", "This job was interrupted before it finished. The messages above are everything that was recorded."));
+      } else if ((job.status === "queued" || job.status === "running") && !msgs.length) {
+        tail.appendChild(el("div", "waiting", job.status === "queued" ? "Queued. Replies will appear here as they arrive." : "Running" + (job.stage ? " · " + job.stage : "") + ". Replies will appear here as they arrive."));
+      } else if (job.status === "running" && job.stage) {
+        tail.appendChild(el("div", "waiting", "Current stage: " + job.stage));
+      }
+    }
+    if (tail.firstChild) inner.appendChild(tail);
+
+    if (stick) toBottom();
+    else if (added) $("jump").hidden = false;
+  }
+
+  function renderHistoryFeed() {
+    resetFeed();
+    if (!historyDoc) return;
+    var card = el("article", "msg msg--system msg--transcript");
+    var head = el("header");
+    head.appendChild(el("span", "who", "Transcript"));
+    head.appendChild(el("span", "to", "view only"));
+    card.appendChild(head);
+    var body = el("div", "body");
+    renderBody(body, historyDoc.body);
+    card.appendChild(body);
+    $("feed-inner").appendChild(card);
+    feed.scrollTop = 0;
+  }
+
+  function renderComposer() {
+    var history = view.kind === "history";
+    $("composer").hidden = history;
+    $("viewonly").hidden = !history;
+    $("welcome").hidden = view.kind !== "new";
+
+    var fu = $("followup");
+    if (parentId) {
+      var p = (job && job.id === parentId) ? job : findJob(parentId);
+      fu.hidden = false;
+      $("followup-text").textContent = "Follow-up to “" + firstLine(p ? p.prompt : parentId, 60) + "”";
+      $("prompt").placeholder = "Send a follow-up to Claude and Codex…";
+    } else {
+      fu.hidden = true;
+      $("prompt").placeholder = "Ask Claude and Codex about Almond Linux…";
+    }
+    $("send-label").textContent = sending ? "Sending…" : (parentId ? "Send follow-up" : "Send");
+    var busy = anyActive();
+    $("send").disabled = sending || busy;
+    var msg = $("form-msg");
+    if (!msg.classList.contains("bad")) {
+      msg.textContent = busy && !history ? "A job is running. Wait for it to finish or stop it before sending another prompt." : "";
+    }
+    var mode = document.querySelector('input[name="mode"]:checked').value;
+    $("mode-hint").textContent = MODE_HINT[mode];
+  }
+
+  // Follow-ups attach to the selected job only when it has finished.
+  function syncParent() {
+    if (view.kind === "job") {
+      var j = (job && job.id === view.id) ? job : findJob(view.id);
+      parentId = isFinished(j) ? view.id : null;
+    } else parentId = null;
+  }
+
+  function announceStatus() {
+    ((state && state.jobs) || []).forEach(function (j) {
+      if (lastStatus[j.id] && lastStatus[j.id] !== j.status && view.kind === "job" && view.id === j.id) {
+        $("announce").textContent = "Job " + (STATUS_LABEL[j.status] || j.status);
+      }
+      lastStatus[j.id] = j.status;
+    });
+  }
+
+  function renderAll() {
+    renderProject();
+    renderConnections();
+    renderJobList();
+    renderHistoryList();
+    syncParent();
+    renderHeader();
+    renderDetails();
+    renderComposer();
+  }
+
+  // ---------- navigation ----------
+  function closeNav() { document.body.classList.remove("nav-open"); $("menu-btn").setAttribute("aria-expanded", "false"); }
+
+  function selectJob(id) {
+    viewSeq++;
+    view = { kind: "job", id: id };
+    job = null; historyDoc = null; stopping = false;
+    setFormMsg("");
+    resetFeed();
+    renderAll();
+    closeNav();
+    loadJob(true);
+  }
+
+  function selectHistory(id) {
+    viewSeq++;
+    view = { kind: "history", id: id };
+    job = null; historyDoc = null; stopping = false;
+    setFormMsg("");
+    resetFeed();
+    renderAll();
+    closeNav();
+    var seq = viewSeq;
+    api("/api/history/" + encodeURIComponent(id)).then(function (d) {
+      if (seq !== viewSeq) return;
+      historyDoc = d || { title: id, body: "" };
+      renderHeader();
+      renderHistoryFeed();
+    }).catch(function (e) {
+      if (seq !== viewSeq) return;
+      resetFeed();
+      $("feed-inner").appendChild(el("div", "notice bad", "Could not open this transcript: " + e.message));
+    });
+  }
+
+  function newConversation() {
+    viewSeq++;
+    view = { kind: "new" };
+    job = null; historyDoc = null; parentId = null; stopping = false;
+    setFormMsg("");
+    resetFeed();
+    renderAll();
+    closeNav();
+    $("prompt").focus();
+  }
+
+  function loadJob(initial) {
+    if (view.kind !== "job") return Promise.resolve();
+    var seq = viewSeq, id = view.id;
+    return api("/api/jobs/" + encodeURIComponent(id)).then(function (d) {
+      if (seq !== viewSeq) return;
+      job = d;
+      syncParent();
+      renderHeader();
+      renderDetails();
+      renderComposer();
+      renderJobFeed(initial);
+    }).catch(function (e) {
+      if (seq !== viewSeq) return;
+      if (initial) {
+        resetFeed();
+        $("feed-inner").appendChild(el("div", "notice bad", "Could not open this conversation: " + e.message));
+      }
+    });
+  }
+
+  // ---------- polling ----------
+  function setBanner(text) {
+    var b = $("banner");
+    b.hidden = !text;
+    b.textContent = text || "";
+  }
+
+  function poll() {
+    api("/api/state").then(function (s) {
+      state = s || {};
+      if (!connectionOk) { connectionOk = true; setBanner(""); }
+      announceStatus();
+      renderAll();
+      return loadJob(false);
+    }).catch(function (e) {
+      connectionOk = false;
+      setBanner(e.status === 401 || e.status === 403
+        ? "The local Almond Duo service refused this window (" + e.message + "). Reopen Almond Duo."
+        : "Can’t reach the local Almond Duo service. Retrying… (" + e.message + ")");
+    }).then(function () {
+      setTimeout(poll, POLL_MS);
+    });
+  }
+
+  // ---------- actions ----------
+  function setFormMsg(text, bad) {
+    var m = $("form-msg");
+    m.textContent = text || "";
+    m.classList.toggle("bad", !!bad);
+  }
+
+  function autosize() {
+    var t = $("prompt");
+    t.style.height = "auto";
+    t.style.height = Math.min(t.scrollHeight, 260) + "px";
+  }
+
+  function submit() {
+    if (sending) return;
+    var ta = $("prompt");
+    var prompt = ta.value.trim();
+    if (!prompt) { setFormMsg("Write a prompt first.", true); ta.focus(); return; }
+    if (anyActive()) { setFormMsg("A job is already running. Wait for it to finish or stop it first.", true); return; }
+    var mode = document.querySelector('input[name="mode"]:checked').value;
+    sending = true;
+    setFormMsg("");
+    renderComposer();
+    api("/api/jobs", { method: "POST", body: { prompt: prompt, mode: mode, parent_id: parentId || null } })
+      .then(function (d) {
+        sending = false;
+        ta.value = "";
+        autosize();
+        if (state) state.active = [d.id];  // blocks a second send until the next poll
+        selectJob(d.id);
+      })
+      .catch(function (e) {
+        sending = false;
+        setFormMsg(e.status === 409 ? "Another job is still running: " + e.message : "Could not send: " + e.message, true);
+        renderComposer();
+      });
+  }
+
+  $("composer").addEventListener("submit", function (ev) { ev.preventDefault(); submit(); });
+  $("prompt").addEventListener("keydown", function (ev) {
+    if (ev.key === "Enter" && (ev.metaKey || ev.ctrlKey) && !ev.isComposing) { ev.preventDefault(); submit(); }
+  });
+  $("prompt").addEventListener("input", function () {
+    autosize();
+    if ($("form-msg").classList.contains("bad")) { setFormMsg(""); renderComposer(); }
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('input[name="mode"]'), function (r) {
+    r.addEventListener("change", renderComposer);
+  });
+
+  $("new-btn").addEventListener("click", newConversation);
+  $("viewonly-new").addEventListener("click", newConversation);
+  $("followup-clear").addEventListener("click", newConversation);
+
+  $("details-btn").addEventListener("click", function () {
+    var d = $("details"), open = d.hidden;
+    d.hidden = !open;
+    this.setAttribute("aria-expanded", open ? "true" : "false");
+    if (open) renderDetails();
+  });
+
+  $("stop-btn").addEventListener("click", function () {
+    if (view.kind !== "job" || stopping) return;
+    var seq = viewSeq;
+    stopping = true;
+    renderHeader();
+    api("/api/jobs/" + encodeURIComponent(view.id) + "/stop", { method: "POST", body: {} })
+      .then(function () { if (seq === viewSeq) return loadJob(false); })
+      .catch(function (e) { if (seq === viewSeq) setFormMsg("Could not stop the job: " + e.message, true); })
+      .then(function () { if (seq === viewSeq) { stopping = false; renderHeader(); } });
+  });
+
+  function saveBlob(text, name) {
+    var url = URL.createObjectURL(new Blob([text], { type: "text/markdown;charset=utf-8" }));
+    var a = el("a");
+    a.href = url; a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+  }
+  function safeName(s) { return String(s).replace(/[^A-Za-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "transcript"; }
+
+  $("download-btn").addEventListener("click", function () {
+    var btn = this;
+    if (view.kind === "history") {
+      if (historyDoc) saveBlob(String(historyDoc.body || ""), "almond-duo-" + safeName(view.id) + ".md");
+      return;
+    }
+    if (view.kind !== "job") return;
+    var id = view.id;
+    btn.disabled = true;
+    api("/api/jobs/" + encodeURIComponent(id) + "/transcript", { text: true })
+      .then(function (t) { saveBlob(typeof t === "string" ? t : JSON.stringify(t, null, 2), "almond-duo-" + safeName(id) + ".md"); })
+      .catch(function (e) { setFormMsg("Could not download the transcript: " + e.message, true); })
+      .then(function () { btn.disabled = false; });
+  });
+
+  $("menu-btn").addEventListener("click", function () {
+    var open = !document.body.classList.contains("nav-open");
+    document.body.classList.toggle("nav-open", open);
+    this.setAttribute("aria-expanded", open ? "true" : "false");
+  });
+  $("backdrop").addEventListener("click", closeNav);
+  document.addEventListener("keydown", function (ev) { if (ev.key === "Escape") closeNav(); });
+
+  // Sample prompts fill the composer; they never send on their own.
+  SAMPLES.forEach(function (s) {
+    var b = el("button", "sample");
+    b.type = "button";
+    b.appendChild(el("span", "t", s.text));
+    b.appendChild(el("span", "m", MODE_LABEL[s.mode]));
+    b.appendChild(el("span", "use", "Use"));
+    b.addEventListener("click", function () {
+      var ta = $("prompt");
+      ta.value = s.text;
+      document.querySelector('input[name="mode"][value="' + s.mode + '"]').checked = true;
+      autosize();
+      setFormMsg("");
+      renderComposer();
+      ta.focus();
+      ta.setSelectionRange(ta.value.length, ta.value.length);
+    });
+    $("samples").appendChild(b);
+  });
+
+  renderAll();
+  poll();
+})();
+</script>
+</body>
+</html>
