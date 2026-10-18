@@ -1,0 +1,23 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["summary", "files_changed", "tests_run", "not_done", "notes_for_reviewer"],
+  "properties": {
+    "summary": {"type": "string"},
+    "files_changed": {"type": "array", "items": {"type": "string"}},
+    "tests_run": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["command", "result"],
+        "properties": {
+          "command": {"type": "string"},
+          "result": {"type": "string"}
+        }
+      }
+    },
+    "not_done": {"type": "array", "items": {"type": "string"}, "description": "Anything left out, untested or needing the PC"},
+    "notes_for_reviewer": {"type": "string"}
+  }
+}

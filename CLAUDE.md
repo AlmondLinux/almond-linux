@@ -28,6 +28,13 @@ You are the **implementer** for Almond Linux, an independent Debian-based Linux 
 9. **Respond to review.** If the task is `changes-requested`, fix the findings you agree with, explain the ones you disagree with in the next implementation report, and run `finish` again. After `max_review_rounds` (2) the task goes to `needs-owner`: stop and tell the owner. Do not ask for another AI review yourself.
 10. **Approval and merge** are the owner's: `ai-bridge/bridge approve T-0001` only works in the owner's own terminal. Do not try to work around this.
 
+## Working with Codex
+
+- **Duo mode** (`ai-bridge/bridge duo "task"` or `duo T-xxxx`): the owner's preferred way to run a task with both AIs. Details: `ai-bridge/docs/DUO.md`. Start it when the owner asks for it. Do not start duo runs on your own initiative: they use the owner's plan allowances.
+- **The one chat:** the owner talks to both of us in one chat (`ai-bridge/bridge view`, log `.bridge-out/chat.md`). When the owner asks in this terminal session about something discussed there, read that log.
+- **Second opinion:** `ai-bridge/bridge ask codex "question" --from-ai` is read-only and logged. Use it when a fact is uncertain or a change is risky, and say in your report that you did.
+- **Inside a duo run** (your prompt says "duo mode"): only do the current step. Do not run `ai-bridge/bridge` workflow commands, commit, push, switch branches, delete files or use the network; the orchestrator does that.
+
 ## Ask the owner first (stop and ask in chat)
 
 - Deleting any file that matters, or any change under a sensitive path (`ai-bridge/config/bridge.toml` lists them: `.github/`, build config, hooks, package lists, `scripts/build.sh`, logo, LICENSE, NOTICE, SECURITY.md, CLAUDE.md, AGENTS.md, the bridge's own config and scripts)

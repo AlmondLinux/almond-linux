@@ -67,3 +67,28 @@ paths = [
   "CLAUDE.md",
   "AGENTS.md",
 ]
+
+[duo]
+# `ai-bridge/bridge duo "task"`: Claude and Codex work on one task together,
+# talking through files (transcript: ai-bridge/conversations/T-xxxx.md).
+# Both CLIs run on the owner's subscriptions (Claude plan, ChatGPT plan);
+# API-key variables are removed from their environment so nothing is billed
+# per token by accident.
+# Empty = find it automatically (PATH, then the ChatGPT app's bundled CLI).
+codex_bin = ""
+claude_bin = ""
+planner = "claude"          # writes the plan
+plan_reviewer = "codex"     # criticises the plan once before any code
+# Who implements: "plan" (the planner proposes, the critic can object),
+# "claude" or "codex". The reviewer is always the other one.
+implementer = "plan"
+timeout_minutes = 25        # per AI call
+# One chat: each AI keeps one session across all tasks and questions, so it
+# remembers earlier turns. `ai-bridge/bridge chat --new` starts fresh ones.
+one_session = true
+# When a task is done: push its branch and open a PR against the branch it
+# started from (never merges). false = leave the branch local.
+open_pr = true
+# Optional model overrides; empty = each tool's own default.
+claude_model = ""
+codex_model = ""

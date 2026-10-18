@@ -1,0 +1,11 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["agrees", "answer", "confidence", "sources"],
+  "properties": {
+    "agrees": {"type": "boolean", "description": "Do you agree with the other AI's answer?"},
+    "answer": {"type": "string", "description": "Your view: confirm, correct or add to it. Short if you agree"},
+    "confidence": {"type": "string", "enum": ["low", "medium", "high"]},
+    "sources": {"type": "array", "items": {"type": "string"}}
+  }
+}

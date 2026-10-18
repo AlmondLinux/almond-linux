@@ -9,3 +9,7 @@ docs/NAME-RESEARCH.md
 .bridge-out/
 .env
 .env.*
+
+# Python caches (the duo orchestrator commits with git add -A)
+__pycache__/
+*.pyc

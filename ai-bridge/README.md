@@ -30,6 +30,10 @@ The trick is simple: **both AIs read and write the same files in this repository
 
 **Loop limit:** at most **2** automated review rounds per task. After that the task goes to `needs-owner` and no AI review runs until you decide. Change it in `config/bridge.toml` (`max_review_rounds`).
 
+## Easiest: duo mode
+
+`ai-bridge/bridge duo "what you want"`: Claude and Codex split the work by their strengths and check each other, on your existing Claude and ChatGPT subscriptions. You read the transcript and approve. Details: [docs/DUO.md](docs/DUO.md). The lanes below are for reviewing work that was done another way.
+
 ## Which review lane should I use?
 
 | Lane | Copying | Cost | What you need |
@@ -58,6 +62,11 @@ Run from the repository root. Python 3.11+ and git; `gh` for PR features.
 | `ai-bridge/bridge handoff` | Refreshes the generated sections of `docs/AI_HANDOFF.md` and `docs/PROJECT_STATUS.md` |
 | `ai-bridge/bridge dashboard --open` | Writes and opens `.bridge-out/dashboard.html` (tasks, component status, reviews, spending) |
 | `ai-bridge/bridge ready T-0004` | Moves a backlog task (e.g. one ChatGPT proposed) to ready |
+| `ai-bridge/bridge duo "task"` | **Claude and Codex work on it together**: plan, critique, implement, review (max 2 rounds), transcript in `conversations/`. Never pushes. See [docs/DUO.md](docs/DUO.md) |
+| `ai-bridge/bridge view --open` | **The one Almond chat** (http://127.0.0.1:4820): you, Claude and Codex in one conversation. Type tasks, questions and answers there |
+| `ai-bridge/bridge discuss "question"` | Claude answers, Codex checks the answer; both go to the chat |
+| `ai-bridge/bridge chat [--new]` | Chat status (sessions, working, waiting for you); `--new` starts fresh AI sessions |
+| `ai-bridge/bridge ask codex "question"` | Read-only question to Codex (or `ask claude`); answers kept in `conversations/ask-<date>.md` |
 | `ai-bridge/bridge approve T-0001` | **Owner only.** Refuses to run without a real terminal, asks you to type the id, then offers to merge the PR |
 
 ## Files

@@ -13,6 +13,10 @@ Roles: **Claude implements** (see `CLAUDE.md`), **OpenAI models review**, **the 
 3. `docs/DESIGN_RULES.md` — design and packaging rules
 4. The task named in the PR title (`T-0001: …`) in `ai-bridge/tasks/` and its latest report in `ai-bridge/reports/`
 
+## Duo mode (Codex with Claude)
+
+When a prompt says you are in **duo mode**, you are one of two agents on a task (see `ai-bridge/docs/DUO.md` and `ai-bridge/config/duo-roles.md`). Do only the current step (plan review, implement, fix or review), answer in the JSON format you are given, and do not commit, push, switch branches, delete files or use the network: the orchestrator does that. Your main value is an independent second view; say plainly when you disagree.
+
 ## Code Review Rules
 
 These rules apply to every review of this repository (Codex reads this section for `@codex review`).
