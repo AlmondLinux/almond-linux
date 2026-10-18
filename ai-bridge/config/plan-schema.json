@@ -1,0 +1,26 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["summary", "steps", "tests", "risks", "implementer", "implementer_reason", "sensitive_paths", "questions_for_owner"],
+  "properties": {
+    "summary": {"type": "string", "description": "What will be done and why, 2-4 sentences"},
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["what", "files"],
+        "properties": {
+          "what": {"type": "string"},
+          "files": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    },
+    "tests": {"type": "array", "items": {"type": "string"}, "description": "Checks to run; say which need the PC"},
+    "risks": {"type": "array", "items": {"type": "string"}},
+    "implementer": {"type": "string", "enum": ["claude", "codex"]},
+    "implementer_reason": {"type": "string"},
+    "sensitive_paths": {"type": "array", "items": {"type": "string"}, "description": "Sensitive paths the plan touches (owner approval)"},
+    "questions_for_owner": {"type": "array", "items": {"type": "string"}, "description": "Decisions only the owner can make. Non-empty = stop before implementing"}
+  }
+}

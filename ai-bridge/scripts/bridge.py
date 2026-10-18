@@ -16,6 +16,8 @@
 #     ai-bridge/bridge handoff             # refresh generated doc sections
 #     ai-bridge/bridge dashboard --open    # local HTML status page
 #     ai-bridge/bridge approve T-0001      # OWNER ONLY (needs a real terminal)
+#     ai-bridge/bridge duo "task"          # Claude + Codex work on it together
+#     ai-bridge/bridge ask codex "..."      # ask the other AI a question
 #
 # Standard library only (Python 3.11+ for tomllib). No command makes a paid
 # API call unless openai.enabled is true in the config AND the caller passes
@@ -34,6 +36,9 @@ import sys
 import tomllib
 import urllib.error
 import urllib.request
+
+# When run as a script, let `import bridge` (duo.py) get this same module.
+sys.modules.setdefault("bridge", sys.modules[__name__])
 
 BRIDGE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ROOT = os.path.dirname(BRIDGE)
@@ -1419,6 +1424,12 @@ def cmd_approve(args, cfg):
     return 0
 
 
+def _duo():
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import duo
+    return duo
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="bridge", description="Almond AI Bridge")
     sub = ap.add_subparsers(dest="cmd")
@@ -1466,12 +1477,24 @@ def main(argv=None):
     s.add_argument("task")
     s = sub.add_parser("approve", help="OWNER ONLY: approve a task, optionally merge its PR")
     s.add_argument("task")
+    s = sub.add_parser("duo", help="Claude and Codex work on a task together (see docs/DUO.md)")
+    s.add_argument("task", help='a task id (T-0004) or a description in quotes')
+    s.add_argument("--implementer", choices=["claude", "codex"], help="override who implements")
+    s.add_argument("--planner", choices=["claude", "codex"], help="override who plans")
+    s.add_argument("--area", default="general", help="area for a new task")
+    s.add_argument("--ignore-questions", action="store_true",
+                   help="implement even if the plan has questions for the owner")
+    s = sub.add_parser("ask", help="ask Claude or Codex a read-only question about the repo")
+    s.add_argument("who", choices=["claude", "codex"])
+    s.add_argument("question", nargs="+")
+    s.add_argument("--from-ai", action="store_true", help="the question comes from the other AI")
     args = ap.parse_args(argv)
     cfg = load_config()
     handlers = {"status": cmd_status, None: cmd_status, "new": cmd_new, "start": cmd_start,
                 "check": cmd_check, "finish": cmd_finish, "out": cmd_out, "in": cmd_in,
                 "review": cmd_review, "ci-review": cmd_ci_review, "handoff": cmd_handoff,
-                "dashboard": cmd_dashboard, "ready": cmd_ready, "approve": cmd_approve}
+                "dashboard": cmd_dashboard, "ready": cmd_ready, "approve": cmd_approve,
+                "duo": lambda a, c: _duo().cmd_duo(a, c), "ask": lambda a, c: _duo().cmd_ask(a, c)}
     if args.cmd is None:
         args.all = False
     try:

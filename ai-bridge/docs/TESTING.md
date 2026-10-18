@@ -20,6 +20,16 @@ The self-tests replace the OpenAI API with a fake and write only to a temporary 
 | GitHub Action logic, without GitHub | `ci-review` with a fake `gh` and the fake API | posts one comment with cost marker and JSON; second run stops at "2 AI reviews (limit 2)"; with $1.995 already recorded this month it refuses ("monthly limit reached"); no key → clean "no review was made" message; `in --pr` copies the comment into `reports/` |
 | Dashboard | `bridge dashboard`, opened in a browser at phone width | renders tasks, cost guard and the component table from PROJECT_STATUS.md |
 
+## Duo mode (2026-10-18)
+
+| What | How | Result |
+|---|---|---|
+| Duo self-tests | `tests/test_duo.py` with fake CLIs (`tests/fakes/fake_ai.py`): binary lookup, API keys removed, transcript rendering, strict schemas, Claude tool allowlist, parsing and validation of both CLIs' output, schema mismatch, `ask` log | 10 passed (35 in total) |
+| Full flow with fakes | Scratch clone, `ALMOND_DUO_CLAUDE`/`ALMOND_DUO_CODEX` pointing at the fakes: plan → critique (change) → revision → Codex implements → checks → Claude requests changes → fix → approve → report, 3 commits, task needs-owner | works as designed |
+| Owner-question stop | `FAKE_AI_QUESTIONS=1`: stops before any file is written (exit 3), task needs-owner; `duo T-xxxx` resumes and finishes | works |
+| Refusals | dirty working tree → refused | works |
+| Real CLIs | one tiny read-only structured call each to Claude (`claude -p --json-schema`) and Codex (`codex exec --output-schema`) | both answered correctly |
+
 ## Not tested yet
 
 - The two GitHub Actions workflows on GitHub itself. `pull_request_target` workflows only run from the default branch, so they can only be tested after this PR is merged.

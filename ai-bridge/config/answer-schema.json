@@ -1,0 +1,10 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["answer", "confidence", "sources"],
+  "properties": {
+    "answer": {"type": "string"},
+    "confidence": {"type": "string", "enum": ["low", "medium", "high"]},
+    "sources": {"type": "array", "items": {"type": "string"}, "description": "Repository files or commands the answer rests on"}
+  }
+}

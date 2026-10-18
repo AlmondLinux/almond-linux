@@ -1,0 +1,12 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["verdict", "concerns", "missing_steps", "implementer_agree", "notes"],
+  "properties": {
+    "verdict": {"type": "string", "enum": ["agree", "change"]},
+    "concerns": {"type": "array", "items": {"type": "string"}},
+    "missing_steps": {"type": "array", "items": {"type": "string"}},
+    "implementer_agree": {"type": "boolean", "description": "Is the proposed implementer the better fit?"},
+    "notes": {"type": "string"}
+  }
+}

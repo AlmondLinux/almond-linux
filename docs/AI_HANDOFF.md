@@ -35,9 +35,9 @@ Last updated 2026-10-17.
 ## Generated status
 
 <!-- bridge:handoff:start -->
-_Generated 2026-10-18 14:57 CEST by `ai-bridge/bridge handoff`. Do not edit by hand._
+_Generated 2026-10-18 15:10 CEST by `ai-bridge/bridge handoff`. Do not edit by hand._
 
-**Branch:** `task/T-0009-preserve-almond-conversation-kno`
+**Branch:** `task/T-0010-duo-mode-claude-and-codex-work-t`
 
 ### Waiting for the owner
 
@@ -50,25 +50,26 @@ _Generated 2026-10-18 14:57 CEST by `ai-bridge/bridge handoff`. Do not edit by h
 | [T-0002](../ai-bridge/tasks/T-0002-confirm-component-definitions.md) | Confirm component definitions, edition names and AALLDM design status | ready | owner | 0/2 |  |
 | [T-0006](../ai-bridge/tasks/T-0006-almond-a-terminal-system-information-command.md) | almond: a terminal system-information command | ready | claude | 0/2 |  |
 | [T-0007](../ai-bridge/tasks/T-0007-install-almond-linux-option-with-calamares.md) | Install Almond Linux option with Calamares | ready | claude | 0/2 |  |
+| [T-0010](../ai-bridge/tasks/T-0010-duo-mode-claude-and-codex-work-together-on-a-tas.md) | Duo mode: Claude and Codex work together on a task | in-progress | claude | 0/2 |  |
 | [T-0008](../ai-bridge/tasks/T-0008-website-status-update-for-the-first-vm-boot.md) | Website status update for the first VM boot | review | claude | 0/2 | #almondlinux.github.io#1 |
 | [T-0009](../ai-bridge/tasks/T-0009-preserve-almond-conversation-knowledge-and-sourc.md) | Preserve Almond conversation knowledge and source provenance | review | codex | 0/2 | #5 |
 | [T-0001](../ai-bridge/tasks/T-0001-first-iso-build-and-vm-boot.md) | First AALDM ISO build and VM boot test | needs-owner | claude-pc | 0/2 |  |
 
 ### Latest reports and reviews
 
-- [T-0009-impl-1.md](../ai-bridge/reports/T-0009-impl-1.md) — implementation
+- [T-0009-impl-1.md](../ai-bridge/reports/T-0009-impl-1.md) — implementation 
 
 ### Last commits on this branch
 
 ```
+8de263d 2026-10-18 T-0009: Link knowledge review to PR #5
+ad8dced 2026-10-18 T-0009: Preserve sourced Almond conversation knowledge and gaps
 d668bc8 2026-10-18 T-0008: website status draft is in AlmondLinux/almondlinux.github.io#1
 82ba00c 2026-10-18 Add tasks T-0006 (almond command), T-0007 (installer), T-0008 (website status)
 1a8d4a1 2026-10-18 Record owner decisions: edition names (D-0002), AALLDM visual design approved (D-0003)
 aa2cd2a 2026-10-18 Record the first VM build and boot test; reconcile project status
 26337d0 2026-10-17 Almond AI Bridge phase 1: shared docs, task/review workflow, free PR checks
 6401433 2026-10-14 AALDM: Almond Pure assets, desktop theme and amd64 build configuration
-96aed5b 2026-10-14 Keep LICENSE as standard MIT text; move scope note to NOTICE
-b3aaaba 2026-10-14 Almond Linux 0.1 'Marcona': first draft of the build configuration
 ```
 
 ### Paid API reviews
