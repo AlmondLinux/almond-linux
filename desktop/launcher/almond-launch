@@ -6,7 +6,8 @@
 #   Apps     installed applications (rofi drun)
 #   Windows  running windows, Enter switches to one (rofi window)
 #   Recent   recently used files from ~/.local/share/recently-used.xbel
-#   System   Settings, Lock, Log Out, Sleep, Restart, Shut Down
+#   System   Settings, Lock (only with a screen locker), Log Out, Sleep,
+#            Restart, Shut Down
 #
 # Theme: dark by default. Put ALMOND_LAUNCH_THEME=light|dark|ocean in
 # ~/.config/almond/launcher.conf to change it. A personal rofi theme at
@@ -14,7 +15,8 @@
 #
 # rofi runs only while the launcher is open; nothing stays resident.
 # Part of Almond Linux. MIT License; see LICENSE and NOTICE.
-# Status: Implemented (source exists, untested at runtime; no Linux/X11 session was available).
+# Status: ran in a VirtualBox test of the first ISO (2026-10-17); the
+# selection fix (no -hover-select) is untested at runtime.
 
 set -u
 
@@ -95,6 +97,14 @@ fi
 #   global Super shortcut cannot reach LXQt; rofi itself closes on Super.
 # Left/Right move between grid cells (Ctrl+B / Ctrl+F still move the text
 #   cursor). One click opens an entry.
+# No -hover-select: with it, the tile under the mouse pointer became the
+#   selected one, so opening the launcher could pre-select whatever sat under
+#   the pointer (the first VM test found Hibernate selected, and the
+#   selection not following typed text). The keyboard now always starts on
+#   the first, best-matching entry; clicking still opens the clicked tile.
+# Power and lock entries from LXQt are hidden from Apps by
+#   /usr/local/share/applications/*.desktop (Hidden=true); they live in the
+#   System mode, which asks before Restart, Shut Down and Log Out.
 # Mode labels are set here, not only in the theme's configuration block, so
 #   a personal launcher.rasi without that block shows the same names.
 #   drun and window are built-in modes: -display-drun / -display-window.
@@ -123,4 +133,4 @@ exec rofi -no-config \
     -kb-move-char-forward 'Control+f' \
     -kb-row-left 'Left,Control+Page_Up' \
     -kb-row-right 'Right,Control+Page_Down' \
-    -hover-select -me-select-entry '' -me-accept-entry 'MousePrimary'
+    -me-select-entry '' -me-accept-entry 'MousePrimary'

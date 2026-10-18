@@ -1,14 +1,16 @@
 #!/bin/sh
 # almond-launch-power: "System" mode of the Almond Launcher (rofi script mode).
 #
-# Entries: Settings, Lock, Log Out, Sleep, Restart, Shut Down.
+# Entries: Settings, Lock (only when a screen locker is installed), Log Out,
+# Sleep, Restart, Shut Down.
 # Log Out, Restart and Shut Down are destructive (unsaved work is lost), so
 # they ask for confirmation inside the launcher first. The LXQt session is
 # then asked over D-Bus to end cleanly (no second LXQt dialog); without an
 # LXQt session the script falls back to loginctl / systemctl.
 #
 # Part of Almond Linux. MIT License; see LICENSE and NOTICE.
-# Status: Implemented (source exists, untested at runtime).
+# Status: ran in a VirtualBox test of the first ISO (2026-10-17); the
+# screen-locker check is untested at runtime.
 
 set -u
 
@@ -25,6 +27,15 @@ detach() {
 }
 
 has() { command -v "$1" >/dev/null 2>&1; }
+
+# True when a screen locker that LXQt (xdg-screensaver) or loginctl can use is
+# installed. AALDM 0.1 ships none, so Lock is not offered: it would do nothing.
+have_locker() {
+    for locker in xscreensaver light-locker xsecurelock slock i3lock xlock; do
+        has "$locker" && return 0
+    done
+    return 1
+}
 
 # True when the LXQt session manager is on the session bus.
 lxqt_session_running() {
@@ -87,7 +98,9 @@ row() { printf '%s\000icon\037%s\037info\037%s\n' "$1" "$2" "$3"; }
 main_menu() {
     printf '\000no-custom\037true\n'
     row "Settings" preferences-system settings
-    row "Lock" system-lock-screen lock
+    if have_locker; then
+        row "Lock" system-lock-screen lock
+    fi
     row "Log Out" system-log-out ask-logout
     row "Sleep" system-suspend sleep
     row "Restart" system-reboot ask-reboot
@@ -128,7 +141,10 @@ case $choice in
     ask-reboot) confirm reboot "Restart now?" "Restart now" system-reboot ;;
     ask-poweroff) confirm poweroff "Shut down now?" "Shut down now" system-shutdown ;;
     cancel) main_menu ;;
-    settings | lock | sleep | logout | reboot | poweroff)
+    lock)
+        if have_locker; then do_action lock; else main_menu; fi
+        ;;
+    settings | sleep | logout | reboot | poweroff)
         do_action "$choice" # print nothing: rofi closes
         ;;
     *) main_menu ;;
