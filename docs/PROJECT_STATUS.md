@@ -124,6 +124,9 @@ Generated from `ai-bridge/tasks/` by `ai-bridge/bridge handoff`. Do not edit bet
 | [T-0004](../ai-bridge/tasks/T-0004-first-boot-polish-and-docs-fixes-from-the-first.md) | First-boot polish and docs fixes from the first VM test | backlog | claude | 0/2 |  |
 | [T-0005](../ai-bridge/tasks/T-0005-owner-feedback-desktop-icons-and-a-start-menu.md) | Owner feedback: desktop icons and a start menu | backlog | claude | 0/2 |  |
 | [T-0002](../ai-bridge/tasks/T-0002-confirm-component-definitions.md) | Confirm component definitions, edition names and AALLDM design status | ready | owner | 0/2 |  |
+| [T-0006](../ai-bridge/tasks/T-0006-almond-a-terminal-system-information-command.md) | almond: a terminal system-information command | ready | claude | 0/2 |  |
+| [T-0007](../ai-bridge/tasks/T-0007-install-almond-linux-option-with-calamares.md) | Install Almond Linux option with Calamares | ready | claude | 0/2 |  |
+| [T-0008](../ai-bridge/tasks/T-0008-website-status-update-for-the-first-vm-boot.md) | Website status update for the first VM boot | ready | claude | 0/2 |  |
 | [T-0001](../ai-bridge/tasks/T-0001-first-iso-build-and-vm-boot.md) | First AALDM ISO build and VM boot test | needs-owner | claude-pc | 0/2 |  |
 <!-- bridge:tasks:end -->
 
