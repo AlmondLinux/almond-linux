@@ -1,0 +1,48 @@
+{
+  "summary": "Fix the three mismatches recorded as Problem 9 in tests/results/2026-10-17-vm/RESULTS.md. All edits are to docs/BUILD.md, docs/PC-SETUP.md and docs/AALDM-PLAN.md, and each one cites the test result as its evidence. Build-VM CPU advice becomes 1 vCPU on a Windows host where the Windows hypervisor is running. The default-browser row stops naming a fixed ESR major version and records what the 2026-10-17 image actually shipped. The PC-SETUP memory command gains `-w 120`, so it uses the same method as BUILD.md and PERFORMANCE.md. No sensitive paths, no package or config changes.",
+  "steps": [
+    {
+      "what": "BUILD.md line 24: change the starting allocation for the build VM. Recommend 1 vCPU when VirtualBox runs on Windows through the Windows hypervisor (NEM fallback, which is shown in VBox.log as 'VT-x is not available'). State the evidence: on 2026-10-17, 4 vCPUs froze the Debian install for about 45 minutes, while 1 vCPU installed in about 5 minutes and the build completed. Say that more vCPUs may work where VirtualBox has VT-x to itself, but that this was not tested. Keep 8 GB RAM and 80 GB disk. Leave the test-VM advice of 2 CPUs (line 92) unchanged, because 2 CPUs worked in the test.",
+      "files": [
+        "docs/BUILD.md"
+      ]
+    },
+    {
+      "what": "PC-SETUP.md Part 2 step 3 (line 30): change 'Processors: 4' to 'Processors: 1', with a one-line reason linking to tests/results/2026-10-17-vm/RESULTS.md Problem 1. The task wording named only BUILD.md, but PC-SETUP.md gives the same 4-CPU instruction. Fixing only one would leave the docs inconsistent, so both are changed.",
+      "files": [
+        "docs/PC-SETUP.md"
+      ]
+    },
+    {
+      "what": "PC-SETUP.md Part 4 step 5 (lines 101-105): change the command to `sudo sh /usr/share/almond/tests/measure-memory.sh -w 120 > ~/memory-2gb.txt` and explain that the script waits another 120 s itself. This matches BUILD.md line 104, PERFORMANCE.md line 59 and the method that was actually used in RESULTS.md. Keep the 2-minute wait before opening the terminal, as RESULTS.md describes.",
+      "files": [
+        "docs/PC-SETUP.md"
+      ]
+    },
+    {
+      "what": "AALDM-PLAN.md \u00a712 table (line 305): rename the row 'Firefox ESR 140' to 'Firefox ESR', because Debian moves stable to each new ESR major version, as the row itself already says. Add a note that the image built on 2026-10-17 contained firefox-esr 153.5.0esr-1~deb13u1 (from the build manifest, RESULTS.md line 55). In the package table (line 451), keep the dated madison snapshot value 140.15.0esr-1~deb13u1 but add a short note that the 2026-10-17 build pulled 153.5.0esr-1~deb13u1, so the snapshot does not look like the shipped version. Do not change any package list.",
+      "files": [
+        "docs/AALDM-PLAN.md"
+      ]
+    },
+    {
+      "what": "Run `ai-bridge/bridge check` and grep the three files again to confirm that no '4 virtual CPUs', 'Processors: **4**', 'ESR 140' row label or measure-memory command without '-w 120' remains. The orchestrator or owner records the result afterwards. PROJECT_STATUS.md item 7 and ROADMAP/AI_HANDOFF updates belong to the normal finish/handoff step and are outside the three-file scope that the task names. List them for the owner instead of editing them here.",
+      "files": []
+    }
+  ],
+  "tests": [
+    "ai-bridge/bridge check (free, runs on the Mac)",
+    "Grep docs/BUILD.md, docs/PC-SETUP.md and docs/AALDM-PLAN.md for '4 virtual CPUs', 'Processors: **4**', 'Firefox ESR 140' and 'measure-memory.sh >' without -w (free, on the Mac)",
+    "git diff --stat shows only the three named docs changed (free)",
+    "Whether 1 vCPU still gives a usable build time, and whether more vCPUs work with Memory Integrity off, needs the PC and was not tested"
+  ],
+  "risks": [
+    "The 1-vCPU advice is based on one PC with Memory Integrity/VBS on. On other hosts it may slow builds that don't need it, so the wording must limit it to the Windows-hypervisor/NEM case and say plainly that other setups were not tested.",
+    "The Firefox version moves with Debian security updates, so 153.5.0esr will go out of date too. Removing the major version from the row label avoids a repeat, and the shipped version stays a dated observation.",
+    "PC-SETUP.md line 30 also says 4 processors, which goes slightly beyond the task's wording (only BUILD.md was cited). It stays within the allowed files, but the reviewer should confirm."
+  ],
+  "implementer": "claude",
+  "implementer_reason": "This is a docs-only consistency fix across three project documents, with evidence taken from the test results. That is Claude's default area under the duo roles. Codex is more useful as the independent reviewer, checking that the wording matches RESULTS.md and claims nothing that was not tested.",
+  "sensitive_paths": [],
+  "questions_for_owner": []
+}

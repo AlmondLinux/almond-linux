@@ -302,11 +302,13 @@ Rules that follow from "performance is the top priority":
 
 | Option | Engine | Security support in Debian 13 | Memory | Verdict |
 |---|---|---|---|---|
-| **Firefox ESR 140** | Gecko | Yes (Debian rebuilds new ESR releases for stable) | High | **Default** |
+| **Firefox ESR** | Gecko | Yes (Debian rebuilds new ESR releases for stable, so the major version changes) | High | **Default** |
 | Chromium | Blink | Yes | High, usually at least Firefox's | Not default |
 | Falkon, qutebrowser, Konqueror | QtWebEngine | **No**: Debian 13 release notes say QtWebEngine is not covered by security support | Medium | Rejected |
 | Epiphany (GNOME Web), luakit, surf, vimb | WebKitGTK | Yes (WebKitGTK is covered) | Medium; Epiphany pulls GTK 4 and libadwaita | Candidate "light browser" for later testing |
 | NetSurf, Dillo, Links2 | Own small engines | Not listed among supported browser engines; little or no JavaScript | Very low | Not suitable as the main browser; most modern sites break |
+
+The image built on 2026-10-17 contained `firefox-esr` 153.5.0esr-1~deb13u1 (build manifest, [test results](../tests/results/2026-10-17-vm/RESULTS.md)); the version moves with Debian security updates.
 
 **Approach for 0.1**: Firefox ESR plus things that make it cheaper without a second browser: zram swap; `libavcodec61` so H.264 video can be used (H.264 decodes far more cheaply on old CPUs than VP9 or AV1); local PDFs and videos open in `qpdfview` and `mpv`, not in Firefox. Planned: a Firefox preferences file (`/etc/firefox-esr/`) with fewer content processes, reduced motion and no smooth scrolling, after measuring the effect.
 
@@ -448,7 +450,7 @@ An empty result means "not in trixie" for that architecture. "yes" under amd64/a
 | `qpdfview` | 0.5.0+ds-5+b1 | main | yes | yes | PDF viewer (lighter than Firefox for local PDFs) |
 | `mpv` | 0.40.0-3+deb13u1 | main | yes | yes | media player |
 | `rofi` | 1.7.5-0.1+b2 | main | yes | yes | Almond Launcher engine |
-| `firefox-esr` | 140.15.0esr-1~deb13u1 | main | yes | yes | web browser |
+| `firefox-esr` | 140.15.0esr-1~deb13u1 | main | yes | yes | web browser (the 2026-10-17 build pulled 153.5.0esr-1~deb13u1: [test results](../tests/results/2026-10-17-vm/RESULTS.md)) |
 | `libavcodec61` | 7:7.1.5-0+deb13u1 | main | yes | yes | H.264/AAC/MP3 for Firefox and mpv |
 | `gvfs` | 1.57.2-2+deb13u1 | main | yes | yes | GIO virtual file systems |
 | `gvfs-backends` | 1.57.2-2+deb13u1 | main | yes | yes | SMB, SFTP, FTP, WebDAV, MTP, trash, recent |

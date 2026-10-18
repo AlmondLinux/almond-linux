@@ -27,7 +27,7 @@ You will need about **100 GB free disk space**, 1–2 hours the first time, and 
    - ISO image: the Debian netinst ISO
    - Type: Linux, Version: Debian (64-bit)
    - **Skip unattended installation** (tick it)
-   - Memory: **8192 MB**, Processors: **4**
+   - Memory: **8192 MB**, Processors: **1** (4 froze the Debian install under the Windows hypervisor in the first test; 1 worked: [test results](../tests/results/2026-10-17-vm/RESULTS.md), Problem 1)
    - Hard disk: **80 GB**, dynamically allocated
 4. Start the VM and install Debian:
    - Choose **Install** (text mode is fine).
@@ -100,9 +100,9 @@ The simplest way is a VirtualBox **shared folder**:
 4. Run the acceptance checks from `docs/BUILD.md` and write down what actually happened, including failures.
 5. Memory test: after the desktop appears, wait 2 minutes without touching anything, then open a terminal and run
    ```sh
-   sudo sh /usr/share/almond/tests/measure-memory.sh > ~/memory-2gb.txt
+   sudo sh /usr/share/almond/tests/measure-memory.sh -w 120 > ~/memory-2gb.txt
    ```
-   (If that path does not exist in the image, copy `tests/measure-memory.sh` from the repository into the VM.) Repeat with the VM set to **1024 MB** RAM and save `memory-1gb.txt`.
+   The script waits another 120 seconds itself before measuring, the same method as `docs/BUILD.md` and `docs/PERFORMANCE.md`. (If that path does not exist in the image, copy `tests/measure-memory.sh` from the repository into the VM.) Repeat with the VM set to **1024 MB** RAM and save `memory-1gb.txt`.
 
 ## Part 5 — Send the results back
 
