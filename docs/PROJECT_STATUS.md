@@ -68,7 +68,7 @@ Edition names confirmed by the owner on 2026-10-18 ([D-0002](../ai-bridge/decisi
 | Customisation | LXQt/Openbox settings tools now; "Almond Personalize" app later | **PLANNED** | [AALDM-PLAN §10](AALDM-PLAN.md#10-customisation). Requirements in [DESIGN_RULES.md](DESIGN_RULES.md#customisation-requirements) |
 | Memory measurement | `tests/measure-memory.sh` | **TESTED (VM)** | Ran in the live image on 2026-10-17. Possible bug: counts 72 processes as unreadable while reporting 0 kernel threads |
 | Installer | Graphical installer | **PLANNED** | Version 0.5 |
-| Website | almondlinux.github.io | Live | Separate repository `AlmondLinux/almondlinux.github.io`. Still says no ISO has been built: needs updating |
+| Website | almondlinux.github.io | Live | Separate repository `AlmondLinux/almondlinux.github.io`. Still says no ISO has been built; the update is waiting in its PR #1 (T-0008) |
 | Almond AI Bridge | Developer workflow for Claude + OpenAI models (`ai-bridge/`) | **IMPLEMENTED** | Free PR checks ran on GitHub (PR #1, passed). OpenAI API review is off until the owner configures it. See [ai-bridge/README.md](../ai-bridge/README.md) |
 
 ## Performance targets (AALDM)
@@ -126,7 +126,7 @@ Generated from `ai-bridge/tasks/` by `ai-bridge/bridge handoff`. Do not edit bet
 | [T-0002](../ai-bridge/tasks/T-0002-confirm-component-definitions.md) | Confirm component definitions, edition names and AALLDM design status | ready | owner | 0/2 |  |
 | [T-0006](../ai-bridge/tasks/T-0006-almond-a-terminal-system-information-command.md) | almond: a terminal system-information command | ready | claude | 0/2 |  |
 | [T-0007](../ai-bridge/tasks/T-0007-install-almond-linux-option-with-calamares.md) | Install Almond Linux option with Calamares | ready | claude | 0/2 |  |
-| [T-0008](../ai-bridge/tasks/T-0008-website-status-update-for-the-first-vm-boot.md) | Website status update for the first VM boot | ready | claude | 0/2 |  |
+| [T-0008](../ai-bridge/tasks/T-0008-website-status-update-for-the-first-vm-boot.md) | Website status update for the first VM boot | review | claude | 0/2 | #almondlinux.github.io#1 |
 | [T-0001](../ai-bridge/tasks/T-0001-first-iso-build-and-vm-boot.md) | First AALDM ISO build and VM boot test | needs-owner | claude-pc | 0/2 |  |
 <!-- bridge:tasks:end -->
 

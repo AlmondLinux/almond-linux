@@ -33,7 +33,7 @@ Last updated 2026-10-17.
 ## Generated status
 
 <!-- bridge:handoff:start -->
-_Generated 2026-10-18 14:43 CEST by `ai-bridge/bridge handoff`. Do not edit by hand._
+_Generated 2026-10-18 14:53 CEST by `ai-bridge/bridge handoff`. Do not edit by hand._
 
 **Branch:** `ai-bridge/phase-1`
 
@@ -48,7 +48,7 @@ _Generated 2026-10-18 14:43 CEST by `ai-bridge/bridge handoff`. Do not edit by h
 | [T-0002](../ai-bridge/tasks/T-0002-confirm-component-definitions.md) | Confirm component definitions, edition names and AALLDM design status | ready | owner | 0/2 |  |
 | [T-0006](../ai-bridge/tasks/T-0006-almond-a-terminal-system-information-command.md) | almond: a terminal system-information command | ready | claude | 0/2 |  |
 | [T-0007](../ai-bridge/tasks/T-0007-install-almond-linux-option-with-calamares.md) | Install Almond Linux option with Calamares | ready | claude | 0/2 |  |
-| [T-0008](../ai-bridge/tasks/T-0008-website-status-update-for-the-first-vm-boot.md) | Website status update for the first VM boot | ready | claude | 0/2 |  |
+| [T-0008](../ai-bridge/tasks/T-0008-website-status-update-for-the-first-vm-boot.md) | Website status update for the first VM boot | review | claude | 0/2 | #almondlinux.github.io#1 |
 | [T-0001](../ai-bridge/tasks/T-0001-first-iso-build-and-vm-boot.md) | First AALDM ISO build and VM boot test | needs-owner | claude-pc | 0/2 |  |
 
 ### Latest reports and reviews
@@ -58,6 +58,7 @@ _Generated 2026-10-18 14:43 CEST by `ai-bridge/bridge handoff`. Do not edit by h
 ### Last commits on this branch
 
 ```
+82ba00c 2026-10-18 Add tasks T-0006 (almond command), T-0007 (installer), T-0008 (website status)
 1a8d4a1 2026-10-18 Record owner decisions: edition names (D-0002), AALLDM visual design approved (D-0003)
 aa2cd2a 2026-10-18 Record the first VM build and boot test; reconcile project status
 26337d0 2026-10-17 Almond AI Bridge phase 1: shared docs, task/review workflow, free PR checks

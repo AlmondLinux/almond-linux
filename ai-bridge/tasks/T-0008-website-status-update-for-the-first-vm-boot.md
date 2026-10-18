@@ -1,14 +1,14 @@
 ---
 id: T-0008
 title: Website status update for the first VM boot
-status: ready
+status: review
 priority: medium
 area: website
 assignee: claude
 created: 2026-10-18
 updated: 2026-10-18
 branch: 
-pr: 
+pr: almondlinux.github.io#1
 review_round: 0
 max_review_rounds: 2
 approval: required
@@ -25,10 +25,10 @@ The website (AlmondLinux/almondlinux.github.io) says accurately that an experime
 
 ## Acceptance criteria
 
-- [ ] Every "no ISO has been built" statement on the site is updated
-- [ ] Facts only: date, VirtualBox, BIOS and UEFI, memory numbers with the "one boot, target not met" caveat
-- [ ] No download link, no "stable", no comparison with other distributions
-- [ ] Prepared on a branch with a PR in the site repository; nothing goes live until the owner merges
+- [x] Every "no ISO has been built" statement on the site is updated
+- [x] Facts only: date, VirtualBox, BIOS and UEFI, memory numbers with the "one boot, target not met" caveat
+- [x] No download link, no "stable", no comparison with other distributions
+- [x] Prepared on a branch with a PR in the site repository; nothing goes live until the owner merges
 
 ## Tests to run
 
@@ -40,3 +40,4 @@ The website (AlmondLinux/almondlinux.github.io) says accurately that an experime
 
 ## Log
 - 2026-10-18 15:00 — created at the owner's request (Claude, Mac)
+- 2026-10-18 15:40 — draft on branch status/first-vm-boot, https://github.com/AlmondLinux/almondlinux.github.io/pull/1 (not merged; merge almond-linux PR #1 first so the report link works) (Claude, Mac)
