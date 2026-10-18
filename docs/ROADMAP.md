@@ -85,3 +85,8 @@ Implemented (source exists, untested): AALDM build configuration (`auto/config` 
 Verified locally (2026-10-14, on macOS): `sh -n` and `dash -n` for every shell script; `scripts/build.sh` refuses to run on macOS and creates no files; every package name exists in Debian 13 trixie (Debian's madison API; table in AALDM-PLAN appendix A); the staging step and the 0200 hook were run in sandboxes with stand-in tools (no live-build, no chroot); `measure-memory.sh` was run against a synthetic `/proc` tree. Not verified: package resolution, image generation, bootability, the desktop session, memory use, networking, security defaults, installation, Secure Boot or reproducibility.
 
 Corrections (2026-10-14, source only; nothing booted): Debian 13's `lxqt-globalkeys` installs `/etc/xdg/lxqt/globalkeyshortcuts.conf` as a directory, so the Super-key file is now staged to `/usr/share/almond/lxqt/` and the 0200 hook merges it with Debian's default shortcuts into a plain file (verified against the Debian file list and packaging; the merge was run in a macOS sandbox with stub tools). The hook also disables the GOA, AFC and gphoto2 gvfs volume monitors with `dpkg-divert`. PCManFM-Qt no longer mounts volumes at login or shows an autorun dialog. The launcher window has square corners (no compositor), passes its mode labels on the rofi command line and keeps its pid file out of `/tmp`. The AALDM phases are now the owner's ten phases. Status of all of it: Implemented (source exists, untested).
+
+
+### 2026-10-18 — Almond Duo app
+
+T-0012: local Almond Duo app implemented and tested on macOS; see ai-bridge/reports/T-0012-impl-1.md for exact test scope. Pending owner review; no OS component approval implied.
