@@ -11,17 +11,21 @@
 #
 # Flow (roles from bridge.toml [duo]):
 #   1. planner writes a plan (JSON)            plan-schema.json
-#   2. plan reviewer criticises it once         plan-review-schema.json
-#   3. planner revises if asked; owner questions in the plan stop here
+#   2. plan reviewer criticises it              plan-review-schema.json
+#   3. if asked, the planner revises once and the reviewer reviews the
+#      revision; remaining disagreement or owner questions stop here
 #   4. implementer edits files on the task branch   implement-schema.json
 #   5. free checks run (ai-bridge/bridge check)
 #   6. the other AI reviews the diff            review-schema.json
-#   7. request_changes -> implementer fixes, back to 5 (max_review_rounds)
+#   7. request_changes or failed checks -> implementer fixes, back to 5
+#      (max_review_rounds)
 #   8. report + transcript; task -> needs-owner. Nothing is pushed or merged.
+#      Only "approved with all checks passing" counts as a successful run.
 #
-# Both CLIs run on the owner's subscriptions. ANTHROPIC_API_KEY and
-# OPENAI_API_KEY are removed from their environment so no per-token billing
-# starts by accident. Standard library only.
+# Both CLIs are meant to run on the owner's sign-ins (Claude plan, ChatGPT
+# plan). API-key variables are removed from their environment so a stray key
+# is not picked up; how a call is billed still depends on how each CLI is
+# signed in. Standard library only.
 
 import datetime as dt
 import json
@@ -42,11 +46,21 @@ SHARED_CONTEXT = [
     "docs/PROJECT_STATUS.md",
     "docs/DESIGN_RULES.md",
 ]
-CODEX_CANDIDATES = [
-    "/Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/codex",
-    "/Applications/Codex.app/Contents/Resources/codex-cli/bin/codex",
+# Codex CLI bundled with the macOS ChatGPT app: a bin/ launcher and the
+# binary inside the nested CodexCLI.app (the latter verified on the owner's Mac,
+# 2026-10-18), in /Applications or ~/Applications.
+_CODEX_BUNDLED = [
+    "ChatGPT.app/Contents/Resources/codex-cli/bin/codex",
+    "ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS/codex",
+    "Codex.app/Contents/Resources/codex-cli/bin/codex",
 ]
+CODEX_CANDIDATES = [os.path.join(d, p) for d in ("/Applications", os.path.expanduser("~/Applications"))
+                    for p in _CODEX_BUNDLED]
 CLAUDE_CANDIDATES = [os.path.expanduser("~/.local/bin/claude")]
+# Removed from each CLI's environment so a key set for other work is not
+# used. This does not change a CLI that was itself signed in with an API key.
+CODEX_DROP_ENV = ["OPENAI_API_KEY", "CODEX_API_KEY"]
+CLAUDE_DROP_ENV = ["ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN"]
 NAMES = {"claude": "Claude", "codex": "Codex"}
 
 # Tools Claude may use. Reading is always allowed; editing only when
@@ -124,18 +138,19 @@ def call_codex(cfg, prompt, schema_file, write=False, timeout=None):
     cmd.append("-")
     started = now()
     try:
-        p = subprocess.run(cmd, input=prompt, capture_output=True, text=True, cwd=bridge.ROOT,
-                           env=clean_env(["OPENAI_API_KEY"]), timeout=timeout)
-    except subprocess.TimeoutExpired:
-        raise DuoError("Codex did not finish within %d minutes" % (timeout // 60))
+        try:
+            p = subprocess.run(cmd, input=prompt, capture_output=True, text=True, cwd=bridge.ROOT,
+                               env=clean_env(CODEX_DROP_ENV), timeout=timeout)
+        except subprocess.TimeoutExpired:
+            raise DuoError("Codex did not finish within %d minutes" % (timeout // 60))
+        text = bridge.read(out.name)
+    finally:
+        if os.path.exists(out.name):
+            os.unlink(out.name)
     log = (p.stdout or "") + (p.stderr or "")
     m = re.search(r"tokens used\s*\n\s*([\d,]+)", log)
     usage = {"tool": "codex", "seconds": int((now() - started).total_seconds()),
              "tokens": int(m.group(1).replace(",", "")) if m else None}
-    try:
-        text = bridge.read(out.name)
-    finally:
-        os.unlink(out.name)
     if p.returncode != 0 or not text.strip():
         tail = "\n".join(log.strip().splitlines()[-8:])
         raise DuoError("Codex failed (exit %d):\n%s" % (p.returncode, tail))
@@ -155,7 +170,7 @@ def call_claude(cfg, prompt, schema_file, write=False, timeout=None):
     started = now()
     try:
         p = subprocess.run(cmd, input=prompt, capture_output=True, text=True, cwd=bridge.ROOT,
-                           env=clean_env(["ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN"]), timeout=timeout)
+                           env=clean_env(CLAUDE_DROP_ENV), timeout=timeout)
     except subprocess.TimeoutExpired:
         raise DuoError("Claude did not finish within %d minutes" % (timeout // 60))
     try:
@@ -278,7 +293,7 @@ def say(task_id, speaker, to, step, body, usage=None):
         if usage.get("turns"):
             bits.append("%s turns" % usage["turns"])
         if usage.get("api_equivalent_usd") is not None:
-            bits.append("API-equivalent $%.2f, used from the Claude plan" % usage["api_equivalent_usd"])
+            bits.append("API-equivalent $%.2f as reported by Claude Code" % usage["api_equivalent_usd"])
         foot = "\n\n_%s_" % " · ".join(bits)
     with open(path, "a", encoding="utf-8") as f:
         f.write(head + text + foot + "\n")
@@ -294,11 +309,15 @@ def step_plan(cfg, task, planner):
     return call(planner, cfg, prompt, "plan-schema.json")
 
 
-def step_plan_review(cfg, task, critic, plan):
+def step_plan_review(cfg, task, critic, plan, earlier=None):
     prompt = preamble(critic, task, "PLAN REVIEW") + "\n\n## %s's plan\n%s\n\nCriticise " \
         "the plan before any code is written: wrong assumptions, missing steps, risks, " \
         "rule breaks, and whether the proposed implementer fits the roles. verdict=agree " \
         "only if it can be implemented as is." % (NAMES[other(critic)], fence(plan))
+    if earlier:
+        prompt += "\n\n## Your first review\n%s\n\nThis is the revised plan and your second " \
+            "and last review. If you still disagree (verdict=change or implementer_agree=false), " \
+            "the run stops and the owner decides before any code is written." % fence(earlier)
     return call(critic, cfg, prompt, "plan-review-schema.json")
 
 
@@ -310,13 +329,18 @@ def step_plan_revise(cfg, task, planner, plan, review):
     return call(planner, cfg, prompt, "plan-schema.json")
 
 
-def step_implement(cfg, task, who, plan, findings=None):
+def step_implement(cfg, task, who, plan, findings=None, failed_checks=None):
     extra = "\n\n## Agreed plan\n%s" % fence(plan)
     if findings:
         extra += "\n\n## %s's review of your last round\n%s\n\nFix the findings you agree " \
                  "with. For any you reject, say why in notes_for_reviewer." % (
                      NAMES[other(who)], fence(findings))
-    prompt = preamble(who, task, "IMPLEMENT" if not findings else "FIX") + extra + \
+    if failed_checks:
+        extra += "\n\n## Free checks that FAILED in your last round\n%s\n\nThese must pass " \
+                 "before the run can succeed, whatever the review said." % "\n".join(
+                     "- %s" % c for c in failed_checks)
+    fixing = bool(findings or failed_checks)
+    prompt = preamble(who, task, "IMPLEMENT" if not fixing else "FIX") + extra + \
         "\n\nEdit the files in this repository now. Run the free checks " \
         "(`python3 ai-bridge/scripts/bridge.py check`) and any task tests you can run here. " \
         "Report exactly what you changed and ran."
@@ -335,12 +359,141 @@ def step_review(cfg, task, who, base, implementation, checks):
 # -------------------------------------------------------------- command
 
 def git_dirty():
-    # Untracked files count too: each round commits with `git add -A`.
-    return bool(bridge.git("status", "--porcelain").stdout.strip())
+    """Paths with tracked or untracked changes. Each round commits with
+    `git add -A`, so anything here would be swept into a duo commit.
+    --untracked-files=all overrides a status.showUntrackedFiles=no setting;
+    ignored files (.gitignore) are not listed because add -A skips them."""
+    p = bridge.git("status", "--porcelain", "--untracked-files=all", "--ignore-submodules=none")
+    if p.returncode != 0:
+        raise DuoError("git status failed: %s" % (p.stderr or p.stdout).strip())
+    return [line[3:] for line in p.stdout.splitlines() if line.strip()]
+
+
+def merge_questions(*lists):
+    """Owner questions from every plan version, in order, without repeats, so
+    a revision cannot drop a question the first plan asked."""
+    out = []
+    for qs in lists:
+        for q in qs or []:
+            if q.strip() and q.strip() not in out:
+                out.append(q.strip())
+    return out
+
+
+def plan_disagreements(review, implementer_forced=False):
+    """Why the plan reviewer still does not agree (empty list = agreed)."""
+    problems = []
+    if review["verdict"] != "agree":
+        problems.append("the plan reviewer still asks for changes: %s" % (
+            "; ".join(review["concerns"] + review["missing_steps"]) or review["notes"] or "no reason given"))
+    if not review["implementer_agree"] and not implementer_forced:
+        problems.append("the plan reviewer disagrees with the proposed implementer: %s" % (
+            review["notes"] or "no reason given"))
+    return problems
+
+
+def agree_plan(cfg, task, planner, critic, implementer_forced=False):
+    """Steps 1-3. Returns (plan, disagreements). The plan is revised at most
+    once, and a revision is always reviewed again."""
+    tid = task["id"]
+    plan, u = step_plan(cfg, task, planner)
+    say(tid, NAMES[planner], NAMES[critic], "plan", plan, u)
+    questions = merge_questions(plan["questions_for_owner"])
+    review, u = step_plan_review(cfg, task, critic, plan)
+    say(tid, NAMES[critic], NAMES[planner], "plan review (%s)" % review["verdict"], review, u)
+    if plan_disagreements(review, implementer_forced):
+        plan, u = step_plan_revise(cfg, task, planner, plan, review)
+        say(tid, NAMES[planner], NAMES[critic], "revised plan", plan, u)
+        questions = merge_questions(questions, plan["questions_for_owner"])
+        first = review
+        review, u = step_plan_review(cfg, task, critic, plan, earlier=first)
+        say(tid, NAMES[critic], NAMES[planner], "second plan review (%s)" % review["verdict"], review, u)
+    plan = dict(plan, questions_for_owner=questions)
+    return plan, plan_disagreements(review, implementer_forced)
+
+
+def stop_for_owner(tid, why, disagreements, questions):
+    """Stop before any code: task -> needs-owner, questions kept in the task."""
+    task = bridge.find_task(tid)
+    task["status"] = "needs-owner"
+    items = ["Disagreement: %s" % d for d in disagreements] + questions
+    if items:
+        task["_body"] = task["_body"].rstrip("\n") + "\n\n## Duo: open points for the owner (%s)\n\n%s\n" % (
+            bridge.today(), "\n".join("- [ ] %s" % x for x in items))
+    bridge.save_task(task, "duo stopped before implementing: %s" % why)
+    say(tid, "Claude + Codex", "Owner", "stopped before implementing (%s)" % why, items)
+    commit_all("%s: duo plan (waiting for the owner: %s)" % (tid, why))
+    print("\nStopped before any code was written (%s):" % why)
+    for x in items:
+        print("  - %s" % x)
+    print("They are listed in the task file. Decide or answer there (or tell Claude), "
+          "then run: ai-bridge/bridge duo %s" % tid)
+    return 3
+
+
+def implement_rounds(cfg, tid, implementer, reviewer, plan, base_branch):
+    """Steps 4-7. Failed free checks always lead to another fix round, even
+    if the reviewer approved, until the task's review rounds run out.
+    Returns (outcome, rounds, implementations, last review, last checks);
+    outcome is "approved" only with an approving review AND no failed check."""
+    ensure_review_budget(bridge.find_task(tid), cfg)
+    findings, failed, implementations, rnd = None, [], [], 0
+    while True:
+        rnd += 1
+        result, u = step_implement(cfg, bridge.find_task(tid), implementer, plan, findings, failed)
+        implementations.append(result)
+        say(tid, NAMES[implementer], NAMES[reviewer], "implementation round %d" % rnd, result, u)
+        checks = bridge.run_checks(base_branch, cfg)
+        failed = [c["name"] for c in checks if c["status"] == "fail"]
+        say(tid, "Checks", NAMES[reviewer], "free checks round %d (%s)" % (
+            rnd, "FAILED: %s" % ", ".join(failed) if failed else "all passed"),
+            bridge.format_checks(checks, markdown=True))
+        commit_all("%s: duo round %d (%s implements, %s reviews)" % (tid, rnd, NAMES[implementer], NAMES[reviewer]))
+        review, u = step_review(cfg, bridge.find_task(tid), reviewer, base_branch, result, checks)
+        say(tid, NAMES[reviewer], NAMES[implementer], "review round %d (%s)" % (rnd, review["verdict"]), review, u)
+        bridge.record_review(bridge.find_task(tid), review, "%s (duo)" % NAMES[reviewer])
+        task = bridge.find_task(tid)
+        mx = int(task.get("max_review_rounds") or cfg["limits"]["max_review_rounds"])
+        if failed and task["status"] != "changes-requested" and int(task.get("review_round") or 0) < mx:
+            task["status"] = "changes-requested"
+            bridge.save_task(task, "free checks failed (%s); another fix round" % ", ".join(failed))
+        if task["status"] != "changes-requested":
+            break
+        findings = review
+        print("  round %d: %s%s" % (rnd, "changes requested" if review["verdict"] == "request_changes"
+                                    else "review %s" % review["verdict"],
+                                    " (checks failed: %s)" % ", ".join(failed) if failed else ""))
+    if failed:
+        outcome = "failed"
+    elif (review["verdict"] == "approve" and review["status_claims_ok"]
+          and not review["honesty_issues"] and not review["questions_for_owner"]):
+        outcome = "approved"
+    else:
+        outcome = "needs-owner"
+    return outcome, rnd, implementations, review, checks
+
+
+def ensure_review_budget(task, cfg):
+    used = int(task.get("review_round") or 0)
+    limit = int(task.get("max_review_rounds") or cfg["limits"]["max_review_rounds"])
+    if used >= limit:
+        raise DuoError("%s has used all %d review rounds; the owner must decide before another run"
+                       % (task["id"], limit))
+
+
+def review_base(task):
+    """Persist a commit, not the current task branch, so resumed reviews
+    include work from earlier rounds and are unaffected by moving branches."""
+    ref = task.get("duo_base") or "HEAD"
+    result = bridge.git("rev-parse", "--verify", "%s^{commit}" % ref, check=True)
+    return result.stdout.strip()
 
 
 def commit_all(message):
-    bridge.git("add", "-A")
+    status, detail = bridge.check_secrets(bridge.tracked_files())
+    if status != "pass":
+        raise DuoError("Secret scan blocked the automatic commit; fix the local files first: " + detail)
+    bridge.git("add", "-A", check=True)
     if bridge.git("diff", "--cached", "--quiet").returncode == 0:
         return None
     bridge.git("commit", "-q", "-m", message + "\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>",
@@ -352,11 +505,15 @@ def cmd_duo(args, cfg):
     duo_cfg = cfg.get("duo", {})
     planner = args.planner or duo_cfg.get("planner", "claude")
     critic = duo_cfg.get("plan_reviewer", other(planner))
+    if critic == planner:
+        critic = other(planner)
     find_bin("claude", cfg)
     find_bin("codex", cfg)
-    if git_dirty():
+    dirty = git_dirty()
+    if dirty:
         raise DuoError("the working tree has uncommitted or untracked files; commit, stash or "
-                       "remove them first (each duo round commits everything with git add -A)")
+                       "remove them first (each duo round commits everything with git add -A):\n  %s"
+                       % "\n  ".join(dirty[:20] + (["..."] if len(dirty) > 20 else [])))
     base_branch = bridge.current_branch()
     if base_branch in (cfg["project"]["default_base"], "HEAD"):
         raise DuoError("run duo from a feature branch (it stacks the task branch on top), not %s"
@@ -370,6 +527,8 @@ def cmd_duo(args, cfg):
         task = bridge.find_task(task_id)
         print("Created %s from your description." % task_id)
     tid = task["id"]
+    ensure_review_budget(task, cfg)
+    base_branch = review_base(task)
     resumable = task.get("status") == "needs-owner" and not int(task.get("review_round") or 0)
     if task.get("status") not in ("ready", "changes-requested", "in-progress") and not resumable:
         raise DuoError("%s is %s; duo works on ready tasks" % (tid, task.get("status")))
@@ -378,65 +537,46 @@ def cmd_duo(args, cfg):
         exists = bridge.git("rev-parse", "--verify", "--quiet", branch).returncode == 0
         bridge.git(*(["checkout", branch] if exists else ["checkout", "-b", branch]), check=True)
     task = bridge.find_task(tid)
-    task.update(status="in-progress", branch=branch, assignee="duo")
+    task.update(status="in-progress", branch=branch, assignee="duo", duo_base=base_branch)
     bridge.save_task(task, "duo started on %s (base %s)" % (branch, base_branch))
     task = bridge.find_task(tid)
     say(tid, "Owner", "Claude + Codex", "task", task.get("title", ""))
     print("Duo on %s, branch %s (base %s). Transcript: %s" % (
         tid, branch, base_branch, bridge.rel(transcript_path(tid))))
 
-    # 1-3: plan, criticise once, revise once.
-    plan, u = step_plan(cfg, task, planner)
-    say(tid, NAMES[planner], NAMES[critic], "plan", plan, u)
-    review, u = step_plan_review(cfg, task, critic, plan)
-    say(tid, NAMES[critic], NAMES[planner], "plan review (%s)" % review["verdict"], review, u)
-    if review["verdict"] == "change":
-        plan, u = step_plan_revise(cfg, task, planner, plan, review)
-        say(tid, NAMES[planner], NAMES[critic], "revised plan", plan, u)
-    bridge.write(os.path.join(CONV, "%s-plan.json" % tid), json.dumps(plan, indent=2) + "\n")
-    if plan["questions_for_owner"] and not args.ignore_questions:
-        task = bridge.find_task(tid)
-        task["status"] = "needs-owner"
-        bridge.save_task(task, "duo stopped before implementing: questions for the owner")
-        say(tid, "Claude + Codex", "Owner", "questions before implementing", plan["questions_for_owner"])
-        commit_all("%s: duo plan (waiting for the owner's answers)" % tid)
-        print("\nStopped: the plan has questions only you can answer:")
-        for q in plan["questions_for_owner"]:
-            print("  - %s" % q)
-        print("Answer them in the task file (or tell Claude), then run: ai-bridge/bridge duo %s" % tid)
-        return 3
-
+    # 1-3: plan, review; if needed revise once and review the revision.
     choice = args.implementer or duo_cfg.get("implementer", "plan")
+    plan, disagreements = agree_plan(cfg, task, planner, critic, implementer_forced=choice != "plan")
+    bridge.write(os.path.join(CONV, "%s-plan.json" % tid), json.dumps(plan, indent=2) + "\n")
+    questions = plan["questions_for_owner"]
+    if disagreements:
+        # --ignore-questions does not cover this: the two AIs disagree.
+        return stop_for_owner(tid, "the plan is not agreed", disagreements, questions)
+    if questions and not args.ignore_questions:
+        return stop_for_owner(tid, "questions for the owner", [], questions)
+
     implementer = plan["implementer"] if choice == "plan" else choice
     reviewer = other(implementer)
     print("Implementer: %s · reviewer: %s" % (NAMES[implementer], NAMES[reviewer]))
 
-    # 4-7: implement, check, review; fix until approved or out of rounds.
-    findings, implementations, rnd = None, [], 0
-    while True:
-        rnd += 1
-        result, u = step_implement(cfg, bridge.find_task(tid), implementer, plan, findings)
-        implementations.append(result)
-        say(tid, NAMES[implementer], NAMES[reviewer], "implementation round %d" % rnd, result, u)
-        checks = bridge.run_checks(base_branch, cfg)
-        failed = [c["name"] for c in checks if c["status"] == "fail"]
-        say(tid, "Checks", NAMES[reviewer], "free checks round %d" % rnd,
-            bridge.format_checks(checks, markdown=True))
-        sha = commit_all("%s: duo round %d (%s implements, %s reviews)" % (tid, rnd, NAMES[implementer], NAMES[reviewer]))
-        task = bridge.find_task(tid)
-        review, u = step_review(cfg, task, reviewer, base_branch, result, checks)
-        say(tid, NAMES[reviewer], NAMES[implementer], "review round %d (%s)" % (rnd, review["verdict"]), review, u)
-        bridge.record_review(bridge.find_task(tid), review, "%s (duo)" % NAMES[reviewer])
-        task = bridge.find_task(tid)
-        if task["status"] != "changes-requested":
-            break
-        findings = review
-        print("  round %d: changes requested%s" % (rnd, " (checks failed: %s)" % ", ".join(failed) if failed else ""))
+    # 4-7: implement, check, review; fix until approved with passing checks
+    # or out of rounds.
+    outcome, rnd, implementations, review, checks = implement_rounds(
+        cfg, tid, implementer, reviewer, plan, base_branch)
+    failed = [c["name"] for c in checks if c["status"] == "fail"]
+    task = bridge.find_task(tid)
+    verdict_line = {
+        "approved": "approved by %s; all free checks passed" % NAMES[reviewer],
+        "failed": "FAILED: free checks still failing after %d round(s): %s (last review: %s)" % (
+            rnd, ", ".join(failed), review["verdict"]),
+        "needs-owner": "not approved: last review %s after %d round(s); the owner decides" % (
+            review["verdict"], rnd),
+    }[outcome]
 
     # 8: report, docs, commit. Never push or merge.
     summary = "Written by `ai-bridge/bridge duo`. Implementer: %s; reviewer: %s. Conversation: " \
-              "[conversations/%s.md](../conversations/%s.md).\n\n%s" % (
-                  NAMES[implementer], NAMES[reviewer], tid, tid,
+              "[conversations/%s.md](../conversations/%s.md).\n\n**Result:** %s\n\n%s" % (
+                  NAMES[implementer], NAMES[reviewer], tid, tid, verdict_line,
                   "\n\n".join("**Round %d (%s):** %s" % (i + 1, NAMES[implementer], r["summary"])
                               for i, r in enumerate(implementations)))
     _, n = bridge.latest(tid, "impl")
@@ -446,21 +586,27 @@ def cmd_duo(args, cfg):
     not_done = sorted({x for r in implementations for x in r["not_done"]})
     report = report.replace("<!-- Implementer: what is untested, unknown or deliberately left out. -->",
                             "\n".join("- %s" % x for x in not_done) or "- nothing reported")
-    report = report.replace("<!-- Implementer: what should happen next. -->",
-                            "1. Owner reads the conversation and the diff.\n2. If good: push the "
-                            "branch and open a PR (or ask Claude to), then `ai-bridge/bridge approve %s`." % tid)
+    next_steps = ("1. Owner reads the conversation and the diff.\n2. If good: push the branch and "
+                  "open a PR (or ask Claude to), then `ai-bridge/bridge approve %s`." % tid
+                  if outcome == "approved" else
+                  "1. Owner reads the conversation and the diff: the run did not succeed (%s).\n"
+                  "2. Fix it by hand or with Claude, or raise max_review_rounds in the task and "
+                  "run duo again." % verdict_line)
+    report = report.replace("<!-- Implementer: what should happen next. -->", next_steps)
     bridge.write(path, report)
     task = bridge.find_task(tid)
     task["status"] = "needs-owner"
-    bridge.save_task(task, "duo finished: %d round(s), last verdict %s" % (rnd, review["verdict"]))
+    bridge.save_task(task, "duo finished: %d round(s), result %s, last verdict %s%s" % (
+        rnd, outcome, review["verdict"], ", checks failed: %s" % ", ".join(failed) if failed else ""))
     bridge.refresh_docs(cfg)
-    say(tid, "Claude + Codex", "Owner", "done", "Last review: **%s**. Report: `%s`. Nothing was "
-        "pushed or merged; the branch `%s` waits for you." % (review["verdict"], bridge.rel(path), branch))
-    commit_all("%s: duo report and transcript" % tid)
-    print("\nDone: %s after %d round(s), last review %s." % (tid, rnd, review["verdict"]))
+    say(tid, "Claude + Codex", "Owner", "done (%s)" % outcome, "Result: **%s**. Report: `%s`. Nothing "
+        "was pushed or merged; the branch `%s` waits for you." % (verdict_line, bridge.rel(path), branch))
+    commit_all("%s: duo report and transcript (%s)" % (tid, outcome))
+    print("\n%s: %s — %s." % ("Done" if outcome == "approved" else "Stopped", tid, verdict_line))
     print("Read: %s and %s" % (bridge.rel(transcript_path(tid)), bridge.rel(path)))
-    print("Nothing was pushed. Next: push %s and open a PR, or ask Claude to." % branch)
-    return 0
+    print("Nothing was pushed.%s" % (" Next: push %s and open a PR, or ask Claude to." % branch
+                                     if outcome == "approved" else ""))
+    return {"approved": 0, "needs-owner": 3, "failed": 1}[outcome]
 
 
 def cmd_ask(args, cfg):

@@ -71,9 +71,10 @@ paths = [
 [duo]
 # `ai-bridge/bridge duo "task"`: Claude and Codex work on one task together,
 # talking through files (transcript: ai-bridge/conversations/T-xxxx.md).
-# Both CLIs run on the owner's subscriptions (Claude plan, ChatGPT plan);
-# API-key variables are removed from their environment so nothing is billed
-# per token by accident.
+# Both CLIs are meant to run on the owner's sign-ins (Claude plan, ChatGPT
+# plan). API-key variables are removed from their environment so a stray key
+# is not picked up; billing still depends on how each CLI is signed in
+# (check `claude auth status` and `codex login status`), see docs/DUO.md.
 # Empty = find it automatically (PATH, then the ChatGPT app's bundled CLI).
 codex_bin = ""
 claude_bin = ""

@@ -4,6 +4,7 @@
 # with a canned JSON object. Never calls a network.
 #   FAKE_AI_STATE  directory for a round counter (review: changes, then approve)
 #   FAKE_AI_QUESTIONS=1  plan contains a question for the owner
+#   FAKE_AI_PLAN_DISAGREE=1  the second plan review still asks for changes
 import json, os, sys
 
 who = "codex" if os.path.basename(sys.argv[0]).startswith("fake_codex") else "claude"
@@ -21,8 +22,15 @@ def bump(name):
     return n
 
 if "Current step: PLAN REVIEW" in prompt:
-    out = {"verdict": "change", "concerns": ["add a test"], "missing_steps": ["run bridge check"],
-           "implementer_agree": True, "notes": "fine otherwise"}
+    # First review asks for a change; the second (of the revision) agrees
+    # unless FAKE_AI_PLAN_DISAGREE=1.
+    second = "second and last review" in prompt
+    if second and not os.environ.get("FAKE_AI_PLAN_DISAGREE"):
+        out = {"verdict": "agree", "concerns": [], "missing_steps": [],
+               "implementer_agree": True, "notes": "revision is fine"}
+    else:
+        out = {"verdict": "change", "concerns": ["add a test"], "missing_steps": ["run bridge check"],
+               "implementer_agree": True, "notes": "fine otherwise"}
 elif "Current step: PLAN" in prompt:
     out = {"summary": "Add docs/DUO-DEMO.md.", "steps": [{"what": "write the file", "files": ["docs/DUO-DEMO.md"]}],
            "tests": ["ai-bridge/bridge check"], "risks": [], "implementer": "codex",
