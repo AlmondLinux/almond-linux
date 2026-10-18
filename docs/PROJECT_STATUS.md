@@ -127,6 +127,7 @@ Generated from `ai-bridge/tasks/` by `ai-bridge/bridge handoff`. Do not edit bet
 | [T-0006](../ai-bridge/tasks/T-0006-almond-a-terminal-system-information-command.md) | almond: a terminal system-information command | ready | claude | 0/2 |  |
 | [T-0007](../ai-bridge/tasks/T-0007-install-almond-linux-option-with-calamares.md) | Install Almond Linux option with Calamares | ready | claude | 0/2 |  |
 | [T-0008](../ai-bridge/tasks/T-0008-website-status-update-for-the-first-vm-boot.md) | Website status update for the first VM boot | review | claude | 0/2 | #almondlinux.github.io#1 |
+| [T-0009](../ai-bridge/tasks/T-0009-preserve-almond-conversation-knowledge-and-sourc.md) | Preserve Almond conversation knowledge and source provenance | review | codex | 0/2 |  |
 | [T-0001](../ai-bridge/tasks/T-0001-first-iso-build-and-vm-boot.md) | First AALDM ISO build and VM boot test | needs-owner | claude-pc | 0/2 |  |
 <!-- bridge:tasks:end -->
 
