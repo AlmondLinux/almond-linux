@@ -8,7 +8,7 @@ assignee: codex
 created: 2026-10-18
 updated: 2026-10-18
 branch: task/T-0009-preserve-almond-conversation-kno
-pr:
+pr: 5
 review_round: 0
 max_review_rounds: 2
 approval: required
@@ -32,7 +32,7 @@ Preserve the accessible Almond Linux conversation as a sourced knowledge base, w
 - [x] Preserve chronological conflicts and later repository corrections
 - [x] Add AGENTS.md guidance and handoff link
 - [x] Request full user export and original visual attachments for completion
-- [ ] Run repository checks and open separate PR without merging
+- [x] Run repository checks and open separate PR without merging
 
 ## Tests to run
 
