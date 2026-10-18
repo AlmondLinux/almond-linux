@@ -1,0 +1,47 @@
+# Almond Linux: Calamares branding.
+# Images are links made by the 0300 hook to the logo PNGs that the build
+# already installs in /usr/share/pixmaps (the owner's logo, unaltered):
+#   logo.png    -> almond-mark-128.png   (sidebar and window icon)
+#   welcome.png -> almond-logo-1024.png  (welcome page and slideshow)
+# The full-colour logo has a dark brown outline, so the sidebar is light
+# (Off-White) with Dark Brown text, per docs/DESIGN_RULES.md.
+# Status: untested.
+---
+componentName:  almond
+
+welcomeStyleCalamares:   false
+welcomeExpandingLogo:    true
+windowExpanding:    normal
+windowSize: 800px,580px
+windowPlacement: center
+sidebar: widget
+navigation: widget
+
+strings:
+    productName:         Almond Linux
+    shortProductName:    Almond
+    version:             0.1 Marcona
+    shortVersion:        0.1
+    versionedName:       Almond Linux 0.1 Marcona
+    shortVersionedName:  Almond 0.1
+    bootloaderEntryName: Almond Linux
+    productUrl:          https://almondlinux.github.io
+    supportUrl:          https://github.com/AlmondLinux/almond-linux/issues
+    knownIssuesUrl:      https://github.com/AlmondLinux/almond-linux/blob/main/docs/PROJECT_STATUS.md#known-bugs-and-risks
+    releaseNotesUrl:     https://github.com/AlmondLinux/almond-linux/blob/main/docs/ROADMAP.md
+    donateUrl:           https://almondlinux.github.io
+
+images:
+    productLogo:         "logo.png"
+    productIcon:         "logo.png"
+    productWelcome:      "welcome.png"
+
+# A list of images instead of a QML slideshow: no QML modules needed.
+slideshow:
+    - "welcome.png"
+
+style:
+   SidebarBackground:        "#F5F2EB"
+   SidebarText:              "#2B2118"
+   SidebarBackgroundCurrent: "#2B2118"
+   SidebarTextCurrent:       "#F5DEB3"

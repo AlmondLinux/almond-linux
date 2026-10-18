@@ -1,0 +1,70 @@
+#!/bin/sh
+# Almond Linux AALDM: the "Install Almond Linux" option (Calamares).
+# Status: Implemented (source exists, untested). No image has run this hook.
+#
+# Runs in the image chroot after packages and config/includes.chroot (which
+# brings /usr/share/almond/calamares from desktop/defaults). It:
+#   1. hides Debian's "Install Debian" menu entry and desktop-icon autostart
+#      (Almond has its own: almond-install.desktop, almond-install-icon);
+#   2. puts Almond's Calamares settings in /etc/calamares, keeping Debian's
+#      files as *.almond-disabled through local dpkg diversions;
+#   3. adds the Almond branding, linking the logo PNGs the build already
+#      installs in /usr/share/pixmaps (the owner's logo, unaltered).
+# Skipped when Calamares is not installed. Idempotent.
+# The installer undoes 1-2 in the installed system
+# (modules/shellprocess-almondcleanup.conf).
+set -eu
+
+log() {
+  printf 'almond-installer: %s\n' "$*"
+}
+
+src=/usr/share/almond/calamares
+if ! command -v calamares >/dev/null 2>&1; then
+  log 'calamares is not installed; skipped'
+  exit 0
+fi
+if [ ! -f "$src/settings.conf" ]; then
+  log "warning: $src/settings.conf missing; skipped"
+  exit 0
+fi
+
+# Divert $1 to $1.almond-disabled (local diversion, survives upgrades).
+divert() {
+  if [ "$(dpkg-divert --truename "$1")" = "$1.almond-disabled" ]; then
+    return 0
+  fi
+  if [ -e "$1" ]; then
+    dpkg-divert --quiet --local --rename --divert "$1.almond-disabled" --add "$1"
+    log "diverted $1"
+  fi
+}
+
+# 1. Debian's installer entry and its desktop-icon autostart.
+divert /usr/share/applications/calamares-install-debian.desktop
+divert /etc/xdg/autostart/calamares-desktop-icon.desktop
+
+# 2. Almond settings.
+for f in settings.conf modules/packages.conf modules/welcome.conf; do
+  divert "/etc/calamares/$f"
+  install -D -m 0644 "$src/$f" "/etc/calamares/$f"
+  log "installed /etc/calamares/$f"
+done
+install -D -m 0644 "$src/modules/shellprocess-almondcleanup.conf" \
+  /etc/calamares/modules/shellprocess-almondcleanup.conf
+
+# 3. Branding.
+brand=/etc/calamares/branding/almond
+mkdir -p "$brand"
+install -m 0644 "$src/branding/almond/branding.desc" "$brand/branding.desc"
+for pair in logo.png:/usr/share/pixmaps/almond-mark-128.png \
+            welcome.png:/usr/share/pixmaps/almond-logo-1024.png; do
+  name=${pair%%:*}
+  target=${pair#*:}
+  if [ -f "$target" ]; then
+    ln -sfn "$target" "$brand/$name"
+  else
+    log "warning: $target missing; the installer will show no $name"
+  fi
+done
+log "branding: $brand"

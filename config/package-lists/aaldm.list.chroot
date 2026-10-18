@@ -137,3 +137,13 @@ librsvg2-common
 # --- Hardware diagnostics for test machines (lspci -nnk, lsusb)
 pciutils
 usbutils
+
+# --- Installer (task T-0007; owner approval needed). Calamares from Debian,
+# with Debian's settings package for its helper modules (sources-media,
+# bootloader-config, dpkg-unsafe-io). Almond's own settings and branding
+# replace Debian's (hook 0300). Both are removed from the installed system.
+# Disk cost: calamares is 11 MB installed, plus KF6/kpmcore/Qt QML
+# dependencies (not measured yet; check package-manifest.txt). RAM cost:
+# 0 MB until the installer is opened.
+calamares
+calamares-settings-debian
