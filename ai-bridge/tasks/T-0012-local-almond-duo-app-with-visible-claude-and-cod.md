@@ -8,7 +8,7 @@ assignee: claude
 created: 2026-10-18
 updated: 2026-10-18
 branch: app/almond-duo-desktop
-pr: 
+pr: 9
 review_round: 0
 max_review_rounds: 2
 approval: required

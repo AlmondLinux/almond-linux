@@ -17,9 +17,13 @@ import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
+# Imports must never modify the signed app bundle.
+sys.dont_write_bytecode = True
+
 ACTIVE = {'queued', 'running'}
 FINAL = {'completed', 'needs-owner', 'failed', 'stopped', 'interrupted'}
 ENV = dict(os.environ)
+ENV['PYTHONDONTWRITEBYTECODE'] = '1'
 ENV['PATH'] = os.pathsep.join([str(Path.home()/'.local/bin'), '/opt/homebrew/bin', '/usr/local/bin', ENV.get('PATH', ''), '/usr/bin', '/bin'])
 for key in ('OPENAI_API_KEY', 'CODEX_API_KEY', 'ANTHROPIC_API_KEY', 'ANTHROPIC_AUTH_TOKEN'):
     ENV.pop(key, None)
