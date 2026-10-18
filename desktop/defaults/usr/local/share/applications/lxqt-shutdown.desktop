@@ -1,0 +1,12 @@
+# Almond Linux: hides /usr/share/applications/lxqt-shutdown.desktop.
+# A desktop file with the same name earlier in XDG_DATA_DIRS
+# (/usr/local/share comes before /usr/share) wins, and Hidden=true makes
+# menus and the Almond Launcher treat the entry as absent.
+# Why: power and lock actions belong in the launcher's System mode, which
+# asks before Restart, Shut Down and Log Out. In the Apps list they had
+# no Almond confirmation, and the first VM test found Hibernate pre-selected.
+# Delete this file to bring the entry back.
+[Desktop Entry]
+Type=Application
+Name=Shutdown
+Hidden=true

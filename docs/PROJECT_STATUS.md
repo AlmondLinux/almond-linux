@@ -120,10 +120,10 @@ Generated from `ai-bridge/tasks/` by `ai-bridge/bridge handoff`. Do not edit bet
 <!-- bridge:tasks:start -->
 | Task | Title | Status | Assignee | Review rounds | PR |
 |---|---|---|---|---|---|
-| [T-0003](../ai-bridge/tasks/T-0003-launcher-fixes-from-the-first-vm-test.md) | Launcher fixes from the first VM test | backlog | claude | 0/2 |  |
 | [T-0004](../ai-bridge/tasks/T-0004-first-boot-polish-and-docs-fixes-from-the-first.md) | First-boot polish and docs fixes from the first VM test | backlog | claude | 0/2 |  |
 | [T-0005](../ai-bridge/tasks/T-0005-owner-feedback-desktop-icons-and-a-start-menu.md) | Owner feedback: desktop icons and a start menu | backlog | claude | 0/2 |  |
 | [T-0002](../ai-bridge/tasks/T-0002-confirm-component-definitions.md) | Confirm component definitions, edition names and AALLDM design status | ready | owner | 0/2 |  |
+| [T-0003](../ai-bridge/tasks/T-0003-launcher-fixes-from-the-first-vm-test.md) | Launcher fixes from the first VM test | review | claude | 0/2 |  |
 | [T-0001](../ai-bridge/tasks/T-0001-first-iso-build-and-vm-boot.md) | First AALDM ISO build and VM boot test | needs-owner | claude-pc | 0/2 |  |
 <!-- bridge:tasks:end -->
 
