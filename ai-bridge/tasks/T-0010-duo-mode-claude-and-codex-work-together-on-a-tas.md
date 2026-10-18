@@ -26,14 +26,14 @@ The owner gives one task; Claude and Codex work on it together, each doing what 
 
 ## Acceptance criteria
 
-- [x] `ai-bridge/bridge duo "task"` / `duo T-xxxx`: plan → one plan critique → revision → implement → free checks → review by the other AI → fixes, max `max_review_rounds`, then the owner
+- [x] `ai-bridge/bridge duo "task"` / `duo T-xxxx`: plan → critique → optional revision and second review → implement → free checks → review by the other AI → fixes, max `max_review_rounds`, then the owner
 - [x] Owner questions in the plan stop the run before code; the run can be resumed
 - [x] Transcript per task in ai-bridge/conversations/; one commit per round; never pushes or merges
 - [x] Uses the official Codex CLI (ChatGPT sign-in) and Claude Code CLI; API-key variables removed from their environment
 - [x] Headless Claude limited by an allowlist; Codex sandboxed (read-only, workspace-write when implementing)
 - [x] `ai-bridge/bridge ask codex|claude "question"`, read-only and logged
 - [x] Tests with fake CLIs; end-to-end run with fakes
-- [ ] One real duo run with the real Claude and Codex
+- [x] One real duo run with the real Claude and Codex (isolated T-9000, evidence in ai-bridge/docs/DUO-VALIDATION.md)
 
 ## Tests to run
 
@@ -47,3 +47,5 @@ The owner gives one task; Claude and Codex work on it together, each doing what 
 
 ## Log
 - 2026-10-18 15:20 — built by Claude (Mac); real run pending
+
+- 2026-10-18 — Codex and Claude completed the workflow hardening in a separate checkout, with an independent review and real plan/implement/review smoke test. See ai-bridge/docs/DUO-VALIDATION.md. Follow-up PR is stacked on T-0010; no merge performed.

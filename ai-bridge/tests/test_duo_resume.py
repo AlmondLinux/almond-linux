@@ -48,10 +48,6 @@ class Resume(unittest.TestCase):
                 duo.commit_all('must not commit')
             git.assert_not_called()
 
-
-if __name__ == '__main__':
-    unittest.main()
-
 from test_duo import Sandbox, plan, review
 
 
@@ -114,3 +110,7 @@ class MissingBase(unittest.TestCase):
         with mock.patch.object(bridge, 'git', side_effect=responses):
             with self.assertRaisesRegex(duo.DuoError, 'not an ancestor'):
                 duo.review_base({'duo_base': 'a'*40})
+
+
+if __name__ == '__main__':
+    unittest.main()

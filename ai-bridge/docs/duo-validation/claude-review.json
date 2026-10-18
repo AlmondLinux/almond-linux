@@ -1,0 +1,49 @@
+{
+  "review": {
+    "verdict": "comment",
+    "summary": "Commit 6216e3e hardens duo mode in four ways. The plan reviewer now has to review the revised plan again, and owner questions from both plan versions are kept. Failed free checks always trigger another fix round. The diff base is saved as `duo_base` (a commit SHA) and reused when a run resumes. The round budget is checked before any work starts, every automatic commit is secret-scanned first, and a run only counts as successful when the review approves, `status_claims_ok` is true, and there are no honesty issues or owner questions. I traced plan \u2192 implement \u2192 check \u2192 review \u2192 report with a SHA as the base: `run_checks`, `check_sensitive`, `changed_files`, `build_packet` and `build_impl_report` all accept a commit via `base...HEAD`. `record_review` and the new failed-check fix round agree on the round count, and `tracked_files()` includes untracked files, so the secret scan does see newly created files. I found nothing that would stop plan, implement or review from running. What remains is error handling at the edges and some test gaps, none of them blocking.",
+    "findings": [
+      {
+        "severity": "minor",
+        "file": "ai-bridge/scripts/duo.py",
+        "line": 493,
+        "issue": "In `implement_rounds`, `commit_all` runs after the free checks. If the implementer creates a file that trips the secret scan, the 'Secret scan' check fails and `commit_all` then raises DuoError, which ends the run. That contradicts the rule that failed checks lead to another fix round. The task is also left `in-progress` with uncommitted edits and an uncommitted transcript, `review_round` does not advance, and the next `bridge duo` refuses to start because `git_dirty()` is non-empty. The owner gets no report or task note explaining this.",
+        "suggestion": "Either (a) skip the commit when the Secret scan check failed and go on to the fix round, passing 'Secret scan' in `failed_checks`, or (b) before raising, set the task to `needs-owner` with a log line naming the files, so the stop is recorded in the task. Add a test for the chosen behaviour."
+      },
+      {
+        "severity": "minor",
+        "file": "ai-bridge/scripts/duo.py",
+        "line": 487,
+        "issue": "`review_base` trusts a saved `duo_base` without checking it. If the branch was rebased and the commit was garbage-collected, `rev-parse --verify` raises a BridgeError and duo cannot start at all. If the base is still there but stale (for example the feature branch was rebased onto newer work), later runs silently diff against the old base.",
+        "suggestion": "If the saved base no longer resolves, or is not an ancestor of the task branch (`git merge-base --is-ancestor`), raise a DuoError that names the problem and tells the owner to clear `duo_base` in the task file. Do not fall back to HEAD silently."
+      },
+      {
+        "severity": "minor",
+        "file": "ai-bridge/scripts/duo.py",
+        "line": 440,
+        "issue": "A run that resumes an `in-progress` or `changes-requested` task (for example after a crash or a DuoError in the middle) restarts with `findings=None`, `failed=[]` and `rnd=1`. The implementer does not see the last recorded review or the failed checks, and the transcript repeats 'implementation round 1'. This does not break the flow, but the review's findings are lost on resume.",
+        "suggestion": "When resuming, seed `findings` from `bridge.latest(tid, 'review', '.json')` if the task is `changes-requested`, and start `rnd` at the task's `review_round` so transcript labels keep counting."
+      },
+      {
+        "severity": "minor",
+        "file": "ai-bridge/tests/test_duo.py",
+        "line": 317,
+        "issue": "The new success rule (approve AND `status_claims_ok` AND no honesty issues AND no owner questions) has no test of its own. `review()` always returns clean claims, so a regression that dropped those conditions would still pass. `duo_base` is also only tested through `review_base()`; nothing checks that `cmd_duo` saves it to the task and reuses it on resume.",
+        "suggestion": "Add ImplementRounds cases where the review approves but has `status_claims_ok=False`, a non-empty `honesty_issues` or a non-empty `questions_for_owner`; each should end as `needs-owner`. Add a sandbox test showing that `duo_base` survives `save_task`/`find_task` and is not overwritten when `cmd_duo` runs a second time on the same task."
+      }
+    ],
+    "status_claims_ok": true,
+    "honesty_issues": [],
+    "tests_assessment": "I reviewed the tests by reading them only. My attempt to run `python3 -m unittest discover -s ai-bridge/tests` was refused by this session's permissions, so I have not seen the tests pass. The unit tests cover: plan agreement (no revision, revision re-reviewed, unresolved change stops, implementer disagreement, forced implementer, questions kept), failed checks overriding approval and being bounded by the round limit, an unresolved review ending as `needs-owner`, the round budget stopping work before implementation, the secret scan running before staging, and a saved base still covering earlier commits. Not covered: the stricter approval conditions (claims, honesty issues, owner questions); `duo_base` being saved and reused end-to-end through `cmd_duo`; the secret scan failing in the middle of a round; a stale or missing `duo_base`; and resuming with earlier review findings. The full live smoke test is running separately and has not been reported as passed; this review does not claim it.",
+    "questions_for_owner": [
+      "This commit also changes `ai-bridge/config/bridge.toml` and `.gitignore`, and `bridge.toml` is a sensitive path under CLAUDE.md. I could not view that part of the diff in this read-only session. Did you approve that `bridge.toml` change?",
+      "If the secret scan blocks an automatic commit partway through a run, which do you want: another fix round (treated like any failed check), or a hard stop that sets the task to `needs-owner`?"
+    ]
+  },
+  "usage": {
+    "tool": "claude",
+    "seconds": 95,
+    "turns": 12,
+    "api_equivalent_usd": 0.8405427999999999
+  }
+}

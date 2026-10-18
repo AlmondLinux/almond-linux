@@ -1,0 +1,30 @@
+[
+  {
+    "scenario": "happy",
+    "exit": 0,
+    "passed": true,
+    "stdout": "Created T-0011 from your description.\n  Owner \u2192 Claude + Codex: task\nDuo on T-0011, branch task/T-0011-fake-integration-test (base f714d3285c853ef4eaf51a35ef579c39901fd834). Transcript: ai-bridge/conversations/T-0011.md\n  Claude \u2192 Codex: plan\n  Codex \u2192 Claude: plan review (change)\n  Claude \u2192 Codex: revised plan\n  Codex \u2192 Claude: second plan review (agree)\nImplementer: Codex \u00b7 reviewer: Claude\n  Codex \u2192 Claude: implementation round 1\n  Checks \u2192 Claude: free checks round 1 (all passed)\n  Claude \u2192 Codex: review round 1 (request_changes)\n  round 1: changes requested\n  Codex \u2192 Claude: implementation round 2\n  Checks \u2192 Claude: free checks round 2 (all passed)\n  Claude \u2192 Codex: review round 2 (approve)\n  Claude + Codex \u2192 Owner: done (approved)\n\nDone: T-0011 \u2014 approved by Claude; all free checks passed.\nRead: ai-bridge/conversations/T-0011.md and ai-bridge/reports/T-0011-impl-1.md\nNothing was pushed. Next: push task/T-0011-fake-integration-test and open a PR, or ask Claude to.\n",
+    "stderr": ""
+  },
+  {
+    "scenario": "disagree",
+    "exit": 3,
+    "passed": true,
+    "stdout": "Created T-0011 from your description.\n  Owner \u2192 Claude + Codex: task\nDuo on T-0011, branch task/T-0011-fake-integration-test (base f714d3285c853ef4eaf51a35ef579c39901fd834). Transcript: ai-bridge/conversations/T-0011.md\n  Claude \u2192 Codex: plan\n  Codex \u2192 Claude: plan review (change)\n  Claude \u2192 Codex: revised plan\n  Codex \u2192 Claude: second plan review (change)\n  Claude + Codex \u2192 Owner: stopped before implementing (the plan is not agreed)\n\nStopped before any code was written (the plan is not agreed):\n  - Disagreement: the plan reviewer still asks for changes: add a test; run bridge check\nThey are listed in the task file. Decide or answer there (or tell Claude), then run: ai-bridge/bridge duo T-0011\n",
+    "stderr": ""
+  },
+  {
+    "scenario": "questions",
+    "exit": 3,
+    "passed": true,
+    "stdout": "Created T-0011 from your description.\n  Owner \u2192 Claude + Codex: task\nDuo on T-0011, branch task/T-0011-fake-integration-test (base f714d3285c853ef4eaf51a35ef579c39901fd834). Transcript: ai-bridge/conversations/T-0011.md\n  Claude \u2192 Codex: plan\n  Codex \u2192 Claude: plan review (change)\n  Claude \u2192 Codex: revised plan\n  Codex \u2192 Claude: second plan review (agree)\n  Claude + Codex \u2192 Owner: stopped before implementing (questions for the owner)\n\nStopped before any code was written (questions for the owner):\n  - Which wording?\nThey are listed in the task file. Decide or answer there (or tell Claude), then run: ai-bridge/bridge duo T-0011\n",
+    "stderr": ""
+  },
+  {
+    "scenario": "untracked",
+    "exit": 2,
+    "passed": true,
+    "stdout": "",
+    "stderr": "bridge: the working tree has uncommitted or untracked files; commit, stash or remove them first (each duo round commits everything with git add -A):\n  unrelated.txt\n"
+  }
+]
